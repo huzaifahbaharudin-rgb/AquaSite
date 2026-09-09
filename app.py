@@ -786,8 +786,12 @@ def render_three_screen_journey():
     defaults = {
         "aq_country": "Singapore", "aq_location": "Jurong demonstration zone",
         "aq_capacity": 20.0, "aq_wue": 1.6, "aq_cooling": "Hybrid cooling",
-        "aq_source": "Recycled or reclaimed water", "aq_peak": 1.10,
+        "aq_source": "Recycled or reclaimed water", "aq_condition": "Peak season",
+        "aq_pue": 1.30, "aq_grid_water_intensity": 0.70,
         "aq_headroom": "Unknown", "aq_cumulative": "Unknown", "aq_safeguard": "Unknown",
+        "aq_numeric_headroom": False, "aq_headroom_capacity": 0.0,
+        "aq_existing_cluster_demand": 0.0, "aq_committed_demand": 0.0,
+        "aq_basin_evidence": "Regional proxy only",
         "aq_population": 100000, "aq_dependence": "Unknown", "aq_receptors": [],
         "aq_consultation": "Not started",
     }
@@ -820,7 +824,10 @@ def render_three_screen_journey():
     stress_label, stress_category = location_data[2], location_data[3]
     capacity = st.session_state.aq_capacity
     wue = st.session_state.aq_wue
-    peak_factor = st.session_state.aq_peak
+    operating_condition = st.session_state.aq_condition
+    condition_factor = {"Normal operation": 1.0, "Peak season": 1.20, "Dry-season stress test": 1.50}[operating_condition]
+    pue = st.session_state.aq_pue
+    grid_water_intensity = st.session_state.aq_grid_water_intensity
     source = st.session_state.aq_source
     cooling = st.session_state.aq_cooling
     headroom = st.session_state.aq_headroom
@@ -831,9 +838,20 @@ def render_three_screen_journey():
     receptors = st.session_state.aq_receptors
     consultation = st.session_state.aq_consultation
 
-    normal, peak, annual = calculate_demand(capacity, wue, peak_factor)
+    direct_normal = capacity * 24 * wue
+    indirect_normal = capacity * 24 * pue * grid_water_intensity
+    combined_normal = direct_normal + indirect_normal
+    combined_condition = combined_normal * condition_factor
+    direct_condition = direct_normal * condition_factor
+    indirect_condition = indirect_normal * condition_factor
+    annual = capacity * 8760 * (wue + pue * grid_water_intensity)
     benchmark_annual = capacity * 8760 * country_data["benchmark"]
-    annual_difference = benchmark_annual - annual
+    annual_difference = benchmark_annual - (capacity * 8760 * wue)
+    cumulative_total = st.session_state.aq_existing_cluster_demand + st.session_state.aq_committed_demand
+    system_load = combined_condition + cumulative_total
+    numeric_headroom = st.session_state.aq_headroom_capacity if st.session_state.aq_numeric_headroom else None
+    stress_multiplier = {-1: None, 0: 1.0, 2: 2.0, 3: 4.0}.get(stress_category, 1.0)
+    stress_adjusted_impact = system_load * stress_multiplier if stress_multiplier is not None else None
     score_parts = {
         "Potable-water reliance": 25 if source == "Potable water" else 10 if source == "Mixed supply" else 0,
         "Utility headroom": 25 if headroom == "Not adequate" else 15 if headroom == "Unknown" else 0,
@@ -845,12 +863,15 @@ def render_three_screen_journey():
     community_score = min(100, sum(score_parts.values()))
     gaps = []
     if headroom != "Confirmed": gaps.append("Verified utility headroom")
+    if not st.session_state.aq_numeric_headroom: gaps.append("Numeric constrained-period utility capacity")
     if cumulative != "Assessed": gaps.append("Cumulative-demand assessment")
     if safeguard != "No known trigger": gaps.append("Community/ecological safeguard clearance")
     if stress_label == "NoData": gaps.append("Local water-stress evidence")
     if dependence == "Unknown": gaps.append("Shared-system community dependence")
     if consultation != "Completed and documented": gaps.append("Documented community engagement")
-    if safeguard == "Triggered" or headroom == "Not adequate" or community_score >= 70 or (stress_category >= 3 and source in ["Potable water", "Mixed supply"]):
+    if st.session_state.aq_basin_evidence != "Verified basin and seasonal data": gaps.append("Verified basin and seasonal dataset")
+    capacity_breach = numeric_headroom is not None and system_load > numeric_headroom
+    if safeguard == "Triggered" or headroom == "Not adequate" or capacity_breach or community_score >= 70 or (stress_category >= 3 and source in ["Potable water", "Mixed supply"]):
         signal, decision = "RED", "STOP — redesign or reconsider the site"
     elif gaps or community_score >= 40 or (wue > country_data["benchmark"] and source == "Potable water"):
         signal, decision = "AMBER", "MITIGATE — resolve safeguards before proceeding"
@@ -858,8 +879,8 @@ def render_three_screen_journey():
         signal, decision = "GREEN", "PROCEED — with verified conditions"
     signal_rgb = {"RED": [239,68,68,245], "AMBER": [245,158,11,245], "GREEN": [34,197,94,245]}[signal]
     icon = {"RED": "🚨", "AMBER": "⚠️", "GREEN": "✓"}[signal]
-    evidence_total = 6
-    evidence_verified = evidence_total - len(gaps)
+    evidence_total = 8
+    evidence_verified = evidence_total - min(evidence_total, len(gaps))
     confidence = round(max(0, evidence_verified) / evidence_total * 100)
 
     if screen == "1  Command Centre":
@@ -876,14 +897,18 @@ def render_three_screen_journey():
             st.number_input("WUE (m³/MWh)", 0.0, 10.0, step=.1, key="aq_wue")
             st.selectbox("Cooling", ["Hybrid cooling", "Air cooling", "Liquid cooling", "Evaporative cooling", "Unknown"], key="aq_cooling")
             st.selectbox("Water source", ["Recycled or reclaimed water", "Closed-loop system", "Mixed supply", "Potable water", "Unknown"], key="aq_source")
-            st.slider("Peak-demand factor", 1.0, 1.5, step=.05, key="aq_peak")
+            st.selectbox("Operating condition", ["Normal operation", "Peak season", "Dry-season stress test"], key="aq_condition")
+            with st.expander("Electricity-related water", expanded=True):
+                st.number_input("Power Usage Effectiveness (PUE)", 1.0, 3.0, step=.05, key="aq_pue", help="Total facility electricity divided by IT electricity.")
+                st.number_input("Grid water intensity (m³/MWh)", 0.0, 5.0, step=.05, key="aq_grid_water_intensity", help="Illustrative consumption associated with electricity generation. Replace with a verified grid or supplier value.")
         with map_col:
             st.markdown(f"<div class='command-card signal-{signal.lower()}'><div class='eyebrow'>Live decision</div><h3>{icon} {signal} · {location_display}</h3><p>{decision}</p></div>", unsafe_allow_html=True)
             m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Verdict", signal)
-            m2.metric("Peak demand", f"{peak:,.0f} m³/day")
-            m3.metric("Community", f"{community_score}/100")
-            m4.metric("Annual water", f"{abs(annual_difference):,.0f} m³", delta="saved" if annual_difference >= 0 else "added", delta_color="normal" if annual_difference >= 0 else "inverse")
+            m1.metric("Preliminary safeguard", signal)
+            m2.metric("Direct water", f"{direct_condition:,.0f} m³/day")
+            m3.metric("Electricity-related", f"{indirect_condition:,.0f} m³/day")
+            m4.metric("Combined demand", f"{combined_condition:,.0f} m³/day")
+            st.caption(f"{operating_condition} · Combined with nearby existing and committed demand: {system_load:,.0f} m³/day")
             boundary_url = ("https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/MYS/ADM1/geoBoundaries-MYS-ADM1_simplified.geojson" if country == "Malaysia" else "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SGP/ADM0/geoBoundaries-SGP-ADM0_simplified.geojson")
             fill = ("properties.shapeName === 'Kedah' ? [239,68,68,235] : properties.shapeName === 'Perlis' ? [249,115,22,225] : [14,116,144,72]" if country == "Malaysia" else [147,51,234,125])
             labels = pd.DataFrame(([{"lat":6.10,"lon":100.52,"label":"⚠ KEDAH\nHIGH"},{"lat":6.47,"lon":100.20,"label":"⚠ PERLIS\nMED–HIGH"}] if country == "Malaysia" else [{"lat":1.355,"lon":103.82,"label":"SINGAPORE\nDATA GAP"}]))
@@ -891,7 +916,7 @@ def render_three_screen_journey():
             layers = [
                 pdk.Layer("GeoJsonLayer", data=boundary_url, filled=True, stroked=True, get_fill_color=fill, get_line_color=[186,230,253,190], line_width_min_pixels=2),
                 pdk.Layer("TextLayer", data=labels, get_position="[lon,lat]", get_text="label", get_size=18, get_color=[255,255,255,255], get_text_anchor="'middle'", outline_width=5, outline_color=[3,20,38,255]),
-                pdk.Layer("ScatterplotLayer", data=site, get_position="[lon,lat]", get_radius=max(5000,min(28000,peak*3.2)), get_fill_color=[*signal_rgb[:3],55], get_line_color=signal_rgb, stroked=True, line_width_min_pixels=3),
+                pdk.Layer("ScatterplotLayer", data=site, get_position="[lon,lat]", get_radius=max(5000,min(28000,combined_condition*3.2)), get_fill_color=[*signal_rgb[:3],55], get_line_color=signal_rgb, stroked=True, line_width_min_pixels=3),
                 pdk.Layer("ScatterplotLayer", data=site, get_position="[lon,lat]", get_radius=2200, radius_min_pixels=10, get_fill_color=signal_rgb, get_line_color=[255,255,255,255], stroked=True, pickable=True),
             ]
             view = pdk.ViewState(latitude=1.36 if country=="Singapore" else 4.15, longitude=103.82 if country=="Singapore" else 101.75, zoom=9 if country=="Singapore" else 5.45, pitch=10)
@@ -904,7 +929,7 @@ def render_three_screen_journey():
         lookup = {LOCATION_LABELS.get(loc,loc):(ctry,loc) for ctry,data in COUNTRIES.items() for loc in data["locations"]}
         with compare_tab:
             picks = st.multiselect("Candidate shortlist", list(lookup), default=list(dict.fromkeys([location_display,"Johor Bahru, Malaysia","Kedah, Malaysia"])), max_selections=4, key="aq_shortlist")
-            rows = [compare_candidate(*lookup[p], capacity, wue, peak_factor, source, headroom, cumulative, safeguard, community_score, current_stress_points) for p in picks]
+            rows = [compare_candidate(*lookup[p], capacity, wue + pue * grid_water_intensity, condition_factor, source, headroom, cumulative, safeguard, community_score, current_stress_points) for p in picks]
             if rows:
                 ranked = sorted(rows,key=lambda r:(r["_rank"],r["_stress"],r["Community index"]))
                 frame = pd.DataFrame(rows); frame["Peak demand"] = frame["Peak demand"].map(lambda v:f"{v:,.0f} m³/day"); frame["Community index"] = frame["Community index"].map(lambda v:f"{v}/100")
@@ -914,9 +939,9 @@ def render_three_screen_journey():
             if st.button("✨ Find a safer configuration", type="primary", width="stretch"):
                 st.session_state.aq_optimised = True
             if st.session_state.get("aq_optimised"):
-                rec_wue = max(.8,min(1.4,country_data["benchmark"]-.4)); _,rec_peak,rec_annual=calculate_demand(capacity,rec_wue,min(peak_factor,1.10))
-                st.success(f"Test Johor Bahru · hybrid cooling · reclaimed water · WUE {rec_wue:.1f}. Unknown evidence remains unresolved.")
-                a,b,c=st.columns(3); a.metric("Pathway",f"{signal} → AMBER"); b.metric("Peak demand",f"{rec_peak:,.0f} m³/day",delta=f"{rec_peak-peak:,.0f}"); c.metric("Annual reduction",f"{max(0,annual-rec_annual):,.0f} m³")
+                rec_wue = max(.8,min(1.4,country_data["benchmark"]-.4)); rec_combined=(capacity*24*(rec_wue+1.20*max(.20,grid_water_intensity*.65)))*min(condition_factor,1.20); rec_annual=capacity*8760*(rec_wue+1.20*max(.20,grid_water_intensity*.65))
+                st.success(f"Test Johor Bahru · hybrid cooling · reclaimed water · WUE {rec_wue:.1f} · PUE 1.20. Unknown evidence remains unresolved.")
+                a,b,c=st.columns(3); a.metric("Pathway",f"{signal} → AMBER"); b.metric("Combined demand",f"{rec_combined:,.0f} m³/day",delta=f"{rec_combined-combined_condition:,.0f}"); c.metric("Annual reduction",f"{max(0,annual-rec_annual):,.0f} m³")
 
     elif screen == "2  Community & Evidence":
         st.header("Community & Evidence")
@@ -925,6 +950,19 @@ def render_three_screen_journey():
         with e1: st.selectbox("Local water-system headroom",["Unknown","Confirmed","Not adequate"],key="aq_headroom")
         with e2: st.selectbox("Nearby cumulative demand",["Unknown","Assessed","Not assessed"],key="aq_cumulative")
         with e3: st.selectbox("Community/ecological safeguard",["Unknown","No known trigger","Triggered"],key="aq_safeguard")
+        st.subheader("Capacity and basin evidence")
+        h1,h2,h3=st.columns(3)
+        with h1:
+            st.checkbox("Verified numeric utility capacity available", key="aq_numeric_headroom")
+            st.number_input("Constrained-period utility capacity (m³/day)", 0.0, 10000000.0, step=100.0, key="aq_headroom_capacity", disabled=not st.session_state.aq_numeric_headroom)
+        with h2:
+            st.number_input("Nearby operating-facility demand (m³/day)", 0.0, 10000000.0, step=100.0, key="aq_existing_cluster_demand")
+            st.number_input("Approved or committed demand (m³/day)", 0.0, 10000000.0, step=100.0, key="aq_committed_demand")
+        with h3:
+            st.selectbox("Basin and seasonal evidence", ["Regional proxy only", "Verified basin data", "Verified basin and seasonal data"], key="aq_basin_evidence")
+            st.metric("Combined system load", f"{system_load:,.0f} m³/day")
+            if numeric_headroom is not None:
+                st.metric("Remaining headroom", f"{numeric_headroom-system_load:,.0f} m³/day")
         c1,c2=st.columns(2)
         with c1:
             st.number_input("Population sharing the water system",1000,5000000,step=10000,key="aq_population")
@@ -940,7 +978,7 @@ def render_three_screen_journey():
             st.caption("Initial weights will be calibrated through stakeholder testing.")
         with right:
             st.subheader("Evidence checklist")
-            for item in ["Verified utility headroom","Cumulative-demand assessment","Community/ecological safeguard clearance","Local water-stress evidence","Shared-system community dependence","Documented community engagement"]:
+            for item in ["Verified utility headroom","Numeric constrained-period utility capacity","Cumulative-demand assessment","Community/ecological safeguard clearance","Local water-stress evidence","Verified basin and seasonal dataset","Shared-system community dependence","Documented community engagement"]:
                 st.write(f"{'✅' if item not in gaps else '⬜'} {item}")
         if gaps:
             st.warning("Approval remains blocked or conditional until every critical evidence gap is resolved.")
@@ -950,17 +988,24 @@ def render_three_screen_journey():
     else:
         st.header("Decision Brief")
         st.markdown(f"<div class='command-card signal-{signal.lower()}'><div class='eyebrow'>Preliminary recommendation</div><h3>{icon} {signal} · {location_display}</h3><p>{decision}</p></div>",unsafe_allow_html=True)
-        b1,b2,b3,b4=st.columns(4); b1.metric("Normal demand",f"{normal:,.0f} m³/day"); b2.metric("Peak demand",f"{peak:,.0f} m³/day"); b3.metric("Community",f"{community_score}/100"); b4.metric("Evidence",f"{confidence}%")
+        b1,b2,b3,b4=st.columns(4); b1.metric("Direct water",f"{direct_condition:,.0f} m³/day"); b2.metric("Electricity-related",f"{indirect_condition:,.0f} m³/day"); b3.metric("Combined system load",f"{system_load:,.0f} m³/day"); b4.metric("Evidence",f"{confidence}%")
         st.subheader("Water Capacity Impact Statement")
-        st.write(f"A proposed **{capacity:.0f} MW** data centre in **{location_display}** is modelled at **{normal:,.0f} m³/day** normally and **{peak:,.0f} m³/day** at peak. The design uses **{cooling.lower()}**, **{source.lower()}** and WUE **{wue:.1f} m³/MWh**. AquaSite's preliminary outcome is **{signal}**.")
+        st.write(f"A proposed **{capacity:.0f} MW** data centre in **{location_display}** is modelled under **{operating_condition.lower()}** at **{direct_condition:,.0f} m³/day** of direct cooling water and **{indirect_condition:,.0f} m³/day** of electricity-related water. Combined facility demand is **{combined_condition:,.0f} m³/day**; including entered nearby and committed demand, the shared-system load is **{system_load:,.0f} m³/day**. AquaSite's preliminary safeguard outcome is **{signal}**.")
+        if stress_adjusted_impact is None:
+            st.warning("A stress-adjusted impact value is withheld because verified basin coverage is missing.")
+        else:
+            st.metric("Stress-adjusted screening impact", f"{stress_adjusted_impact:,.0f} impact units", help="A prioritisation signal, not a physical volume or extraction forecast.")
         st.subheader("Conditions to unlock")
         for item in gaps or ["Maintain monitoring, disclosure and formal validation."]: st.write(f"- {item}")
-        brief=f"""# AquaSite Decision Brief\n\n**Candidate:** {location_display}\n**Verdict:** {signal} — {decision}\n\n## Demand\n- Normal: {normal:,.0f} m³/day\n- Peak: {peak:,.0f} m³/day\n- Annual: {annual:,.0f} m³/year\n\n## Community and evidence\n- Community index: {community_score}/100\n- Evidence confidence: {confidence}%\n- Water-stress signal: {stress_label}\n\n## Conditions\n{chr(10).join('- '+x for x in gaps) if gaps else '- Maintain monitoring and formal validation.'}\n\nDemonstration screening only; not regulatory approval or proof of utility capacity.\n"""
+        brief=f"""# AquaSite Decision Brief\n\n**Candidate:** {location_display}\n**Preliminary safeguard decision:** {signal} — {decision}\n**Operating condition:** {operating_condition}\n\n## Facility water demand\n- Direct cooling water: {direct_condition:,.0f} m³/day\n- Electricity-related water: {indirect_condition:,.0f} m³/day\n- Combined facility demand: {combined_condition:,.0f} m³/day\n- Annual combined operational water: {annual:,.0f} m³/year\n\n## Capacity and cumulative demand\n- Nearby operating-facility demand entered: {st.session_state.aq_existing_cluster_demand:,.0f} m³/day\n- Approved or committed demand entered: {st.session_state.aq_committed_demand:,.0f} m³/day\n- Combined shared-system load: {system_load:,.0f} m³/day\n- Verified constrained-period capacity: {f'{numeric_headroom:,.0f} m³/day' if numeric_headroom is not None else 'Evidence required'}\n\n## Stress, community and evidence\n- Regional water-stress signal: {stress_label}\n- Basin evidence: {st.session_state.aq_basin_evidence}\n- Stress-adjusted screening impact: {f'{stress_adjusted_impact:,.0f} impact units' if stress_adjusted_impact is not None else 'Withheld—coverage missing'}\n- Community Water Pressure Screening Index: {community_score}/100\n- Evidence confidence: {confidence}%\n\n## Conditions\n{chr(10).join('- '+x for x in gaps) if gaps else '- Maintain monitoring and formal validation.'}\n\nDemonstration screening only; not regulatory approval, a physical extraction forecast or proof of utility capacity.\n"""
         st.download_button("⬇️ Download decision brief",brief,file_name="AquaSite_decision_brief.md",mime="text/markdown",width="stretch")
         with st.expander("Audit trail · method, assumptions and sources",expanded=False):
-            st.write("**Demand method:** IT capacity × 24 × WUE; peak demand applies the selected peak factor.")
+            st.write("**Direct water:** IT capacity × 24 × WUE × operating-condition factor.")
+            st.write("**Electricity-related water:** IT capacity × 24 × PUE × grid water intensity × operating-condition factor.")
+            st.write("**Combined system load:** direct + electricity-related + nearby operating + approved or committed demand.")
+            st.write("**Stress adjustment:** combined system load × transparent regional stress multiplier. This produces prioritisation units, not cubic metres of physical demand.")
             st.write("**Community method:** disclosed additive screening weights. These require stakeholder calibration and are not measured health or social impacts.")
-            st.write("**Limitations:** direct operational water only; demonstration locations; public regional stress screening; unknown local utility headroom; no regulatory approval.")
+            st.write("**Limitations:** indirect-water intensity and operating factors are illustrative until replaced with project and supplier data; demonstration locations; regional stress proxies; no regulatory approval.")
             st.markdown("**Sources:** [Singapore Green Data Centre Roadmap](https://www.imda.gov.sg/-/media/imda/files/news-and-events/media-room/media-releases/2024/05/green-dc-roadmap.pdf) · [Malaysia Data Centre Planning Guideline](https://jpbd.penang.gov.my/images/faris/pdf/2025/GARIS%20PANDUAN/GPP%20PUSAT%20DATA%20-%20ENG.pdf) · [WRI Aqueduct 4.0](https://www.wri.org/data/aqueduct-40-country-rankings) · [geoBoundaries](https://www.geoboundaries.org/)")
     st.caption("AquaSite prototype — demonstration purposes only.")
 
