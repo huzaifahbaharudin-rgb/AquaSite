@@ -5,83 +5,268 @@ from math import asin, cos, radians, sin, sqrt
 
 st.set_page_config(page_title="AquaSite", page_icon="💧", layout="wide")
 
+# -----------------------------
+# Premium AquaSite visual system
+# -----------------------------
 st.markdown(
     """
     <style>
     .stApp {
         background:
-          radial-gradient(circle at 85% 8%, rgba(14,165,233,.18), transparent 28%),
+          radial-gradient(circle at 84% 7%, rgba(14,165,233,.14), transparent 28%),
           linear-gradient(145deg, #031426 0%, #08233d 52%, #0b3152 100%);
         color: #e6f4ff;
         font-size: 17px;
     }
-    [data-testid="stHeader"] { background: rgba(3,20,38,.88); }
+    .block-container {
+        max-width: 1380px;
+        padding-top: 2.2rem;
+        padding-bottom: 4rem;
+        padding-left: 2.4rem;
+        padding-right: 2.4rem;
+    }
+    [data-testid="stHeader"] {
+        background: rgba(3,20,38,.72) !important;
+        backdrop-filter: blur(18px);
+        border-bottom: 1px solid rgba(125,211,252,.08);
+    }
     [data-testid="stToolbar"] { color: #dbeafe !important; }
-    h1 { color: #7dd3fc !important; font-size: 3rem !important; }
-    h2, h3 { color: #bae6fd !important; }
+    #MainMenu, footer { visibility: hidden; }
+
+    h1 {
+        font-size: clamp(2.8rem, 5vw, 4.8rem) !important;
+        line-height: .98 !important;
+        letter-spacing: -.045em !important;
+        margin-bottom: .6rem !important;
+        background: linear-gradient(90deg, #f0f9ff 0%, #7dd3fc 48%, #38bdf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    h2 {
+        color: #bae6fd !important;
+        font-size: 1.65rem !important;
+        letter-spacing: -.025em;
+        margin-top: 2.1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    h3 { color: #bae6fd !important; letter-spacing: -.015em; }
     p, label, li, .stMarkdown, [data-testid="stCaptionContainer"] {
         color: #dbeafe !important;
         line-height: 1.55;
     }
     a { color: #38bdf8 !important; }
-    [data-baseweb="tab"] { color: #bfdbfe !important; }
-    [aria-selected="true"][data-baseweb="tab"] {
-        color: #38bdf8 !important; border-bottom-color: #38bdf8 !important;
+
+    .hero-card {
+        position: relative;
+        overflow: hidden;
+        padding: 30px 34px;
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at 90% 10%, rgba(56,189,248,.20), transparent 30%),
+          linear-gradient(135deg, rgba(8,47,73,.95), rgba(6,32,55,.84));
+        border: 1px solid rgba(125,211,252,.22);
+        box-shadow: 0 24px 70px rgba(0,0,0,.28);
+        margin-bottom: 1.15rem;
     }
-    [data-testid="stWidgetLabel"] p {
-        color: #e0f2fe !important; font-weight: 700; font-size: 1.05rem !important;
+    .hero-card:after {
+        content: '';
+        position: absolute;
+        width: 180px; height: 180px;
+        right: -55px; bottom: -80px;
+        border-radius: 50%;
+        border: 1px solid rgba(125,211,252,.18);
+        box-shadow: 0 0 0 26px rgba(56,189,248,.025), 0 0 0 54px rgba(56,189,248,.018);
     }
-    [data-testid="stRadio"] label {
-        background: rgba(11,41,69,.72); border: 1px solid #1d4f73;
-        border-radius: 12px; padding: 11px 15px; margin-right: 8px;
+    .hero-card .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: .14em;
+        font-size: .74rem;
+        font-weight: 800;
+        color: #7dd3fc !important;
+        margin-bottom: 7px;
     }
-    [data-testid="stRadio"] label p { color: #e0f2fe !important; font-size: 1rem !important; }
-    [data-baseweb="select"] > div,
-    [data-testid="stNumberInput"] input,
-    [data-testid="stExpander"] details {
-        background: #0b2945 !important; color: #f0f9ff !important;
-        border-color: #1d4f73 !important;
-        min-height: 54px;
-    }
-    [data-testid="stNumberInput"] button { min-width: 46px; min-height: 46px; }
-    [data-testid="stSlider"] { padding-top: 8px; padding-bottom: 12px; }
-    [data-testid="stSlider"] [role="slider"] {
-        width: 26px !important; height: 26px !important;
-        background: #38bdf8 !important; border: 3px solid #e0f2fe !important;
-        box-shadow: 0 0 0 6px rgba(56,189,248,.16);
-    }
-    [data-testid="stMultiSelect"] > div { min-height: 54px; background: #0b2945; }
-    [data-testid="stExpander"] summary { color: #e0f2fe !important; }
-    div[data-testid="stMetric"] {
-        background: linear-gradient(145deg, rgba(12,49,82,.98), rgba(8,35,61,.98));
-        border: 1px solid #2474a6;
-        border-radius: 16px; padding: 16px;
-        box-shadow: 0 10px 28px rgba(0,0,0,.24);
-    }
-    div[data-testid="stMetric"] label,
-    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    .hero-card h3 {
+        font-size: 1.95rem !important;
+        margin: 0 0 .55rem 0 !important;
         color: #f0f9ff !important;
     }
-    div[data-testid="stAlert"] { border-radius: 14px; }
-    div[data-testid="stAlert"] p { color: inherit !important; }
-    .mission-card {
-        padding: 18px 22px; border-radius: 18px;
-        background: linear-gradient(120deg, #075985, #0369a1, #0284c7); color: white;
-        box-shadow: 0 14px 32px rgba(2,132,199,.24); margin: 8px 0 18px 0;
+    .hero-card p {
+        max-width: 920px;
+        font-size: 1.06rem !important;
+        color: #cfeeff !important;
+        margin: 0 !important;
     }
-    .mission-card h3 { color: white !important; margin: 0 0 5px 0; }
-    .mission-card p { margin: 0; font-size: 1.02rem; }
+
+    .command-card {
+        padding: 18px 22px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(8,47,73,.94), rgba(6,32,55,.88));
+        border: 1px solid rgba(56,189,248,.23);
+        box-shadow: 0 16px 45px rgba(0,0,0,.22);
+        margin: 4px 0 14px 0;
+    }
+    .command-card .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        font-size: .72rem;
+        font-weight: 800;
+        color: #7dd3fc;
+        margin-bottom: 4px;
+    }
+    .command-card h3 { margin: 0 0 4px 0 !important; color: #f0f9ff !important; }
+    .command-card p { margin: 0 !important; color: #bfdbfe !important; }
+
+    .decision-signal {
+        padding: 22px 24px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(4,25,43,.97), rgba(7,36,60,.94));
+        box-shadow: 0 20px 55px rgba(0,0,0,.25);
+        margin: 8px 0 16px 0;
+    }
+    .decision-kicker {
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        font-size: .76rem;
+        font-weight: 800;
+        color: #94a3b8;
+    }
+    .decision-title {
+        font-size: clamp(1.45rem, 3vw, 2rem);
+        font-weight: 850;
+        letter-spacing: -.025em;
+        margin: 5px 0 7px 0;
+    }
+    .confidence-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+    .confidence-pill {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(15,23,42,.72);
+        border: 1px solid rgba(148,163,184,.18);
+        color: #e2e8f0;
+        font-size: .88rem;
+        font-weight: 700;
+    }
+
     .map-key {
-        background: #0b2945; border-left: 6px solid #38bdf8; padding: 12px 16px;
-        border-radius: 10px; color: #e0f2fe; margin: 8px 0;
+        background: rgba(8,38,64,.82);
+        border-left: 4px solid #38bdf8;
+        border-radius: 12px;
+        padding: 12px 15px;
+        color: #e0f2fe;
+        margin: 8px 0;
     }
-    [data-testid="stDataFrame"] { border: 1px solid #1d4f73; border-radius: 12px; }
-    hr { border-color: #1d4f73 !important; }
+
+    div[data-testid="stMetric"] {
+        min-height: 118px;
+        padding: 18px !important;
+        border-radius: 18px !important;
+        background: linear-gradient(145deg, rgba(10,42,70,.93), rgba(6,28,49,.96)) !important;
+        border: 1px solid rgba(56,189,248,.18) !important;
+        box-shadow: 0 14px 34px rgba(0,0,0,.20) !important;
+        transition: transform .18s ease, border-color .18s ease;
+    }
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        border-color: rgba(125,211,252,.42) !important;
+    }
+    div[data-testid="stMetric"] label {
+        font-size: .78rem !important;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #93c5fd !important;
+    }
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: #f0f9ff !important;
+        font-size: 1.6rem !important;
+        letter-spacing: -.025em;
+    }
+
+    [data-baseweb="select"] > div,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stMultiSelect"] > div {
+        border-radius: 13px !important;
+        border: 1px solid rgba(125,211,252,.18) !important;
+        background: rgba(8,38,64,.86) !important;
+    }
+    [data-testid="stWidgetLabel"] p {
+        color: #d8efff !important;
+        font-weight: 700;
+        font-size: .92rem !important;
+    }
+    [data-testid="stRadio"] > div { gap: 10px; }
+    [data-testid="stRadio"] label {
+        border-radius: 14px !important;
+        border: 1px solid rgba(125,211,252,.16) !important;
+        background: rgba(8,38,64,.72) !important;
+        padding: 12px 16px !important;
+        transition: all .18s ease;
+    }
+    [data-testid="stRadio"] label:hover {
+        transform: translateY(-1px);
+        border-color: rgba(56,189,248,.5) !important;
+        background: rgba(10,49,82,.88) !important;
+    }
+    [data-testid="stSlider"] [role="slider"] {
+        width: 28px !important;
+        height: 28px !important;
+        background: #38bdf8 !important;
+        border: 3px solid #e0f2fe !important;
+        box-shadow: 0 0 0 7px rgba(56,189,248,.13), 0 5px 18px rgba(0,0,0,.28) !important;
+    }
+    [data-testid="stExpander"] details {
+        border-radius: 18px !important;
+        border: 1px solid rgba(125,211,252,.15) !important;
+        background: rgba(7,31,53,.72) !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,.12);
+        overflow: hidden;
+    }
+    [data-testid="stExpander"] summary {
+        min-height: 58px;
+        font-weight: 750;
+        color: #e0f2fe !important;
+    }
+    [data-testid="stAlert"] {
+        border-radius: 16px !important;
+        border-width: 1px !important;
+        box-shadow: 0 10px 28px rgba(0,0,0,.12);
+    }
+    [data-testid="stAlert"] p { color: inherit !important; }
+    [data-testid="stDataFrame"] {
+        border-radius: 16px !important;
+        overflow: hidden;
+        border: 1px solid rgba(125,211,252,.16) !important;
+        box-shadow: 0 12px 36px rgba(0,0,0,.16);
+    }
+    [data-testid="stDeckGlJsonChart"] {
+        border-radius: 22px;
+        overflow: hidden;
+        border: 1px solid rgba(125,211,252,.19);
+        box-shadow: 0 22px 60px rgba(0,0,0,.26);
+    }
+    hr {
+        border: 0 !important;
+        height: 1px !important;
+        background: linear-gradient(90deg, transparent, rgba(125,211,252,.20), transparent) !important;
+        margin: 2rem 0 !important;
+    }
+    @media (max-width: 900px) {
+        .block-container { padding-left: 1rem; padding-right: 1rem; }
+        .hero-card { padding: 22px; }
+        div[data-testid="stMetric"] { min-height: 104px; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
+# -----------------------------
+# Data and assumptions
+# -----------------------------
 COUNTRIES = {
     "Singapore": {
         "locations": {
@@ -111,15 +296,13 @@ COUNTRIES = {
         "benchmark_name": "Illustrative AquaSite comparison value",
         "source_note": (
             "Malaysia's planning guideline requires continuous minimum daily water supply "
-            "to be considered and encourages efficient and renewable water technologies, "
+            "to be considered and encourages efficient and renewable-water technologies, "
             "but it does not prescribe one national numerical WUE limit."
         ),
         "authority": "relevant state water supplier, SPAN and planning authority",
     },
 }
 
-# Curated public examples, not a complete market inventory. Locations described as
-# approximate represent the operator's published campus or district.
 DATA_CENTRES = [
     {"name": "SG1", "operator": "Equinix", "country": "Singapore", "lat": 1.2947, "lon": 103.7870, "place": "20 Ayer Rajah Crescent", "precision": "Published address"},
     {"name": "SG3", "operator": "Equinix", "country": "Singapore", "lat": 1.2949, "lon": 103.7876, "place": "26A Ayer Rajah Crescent", "precision": "Published address"},
@@ -161,43 +344,38 @@ SCENARIOS = {
     },
 }
 
-
 def calculate_demand(capacity_mw, wue, peak_factor):
     normal_m3_day = capacity_mw * 24 * wue
     peak_m3_day = normal_m3_day * peak_factor
     annual_m3 = capacity_mw * 8760 * wue
     return normal_m3_day, peak_m3_day, annual_m3
 
-
 def distance_km(lat1, lon1, lat2, lon2):
-    """Great-circle distance for the exploratory cluster prompt."""
     earth_radius_km = 6371
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     return 2 * earth_radius_km * asin(sqrt(a))
 
-
+# -----------------------------
+# Hero / site controls
+# -----------------------------
 st.title("💧 AquaSite")
-st.write(
-    "A transparent first screen for the water implications of proposed data centres "
-    "in Singapore and Malaysia."
-)
-st.info(
-    "Your mission: design a lower-water data centre without hiding local risk. "
-    "Change the proposal and try to unlock Proceed with conditions."
-)
 st.markdown(
     """
-    <div class="mission-card">
-      <h3>🎮 The AquaSite Siting Challenge</h3>
-      <p>Reduce water demand, close the evidence gaps and unlock the Water Guardian badge.</p>
+    <div class="hero-card">
+      <div class="eyebrow">Pre-development water safeguard screening</div>
+      <h3>Should this data centre be built here?</h3>
+      <p>AquaSite screens proposed sites for water demand, local system capacity,
+      regional water stress and community safeguards — before development decisions
+      are locked in.</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
+st.caption("Adjust the proposal below and see whether the site should PROCEED, MITIGATE or STOP.")
 
-st.header("1  Choose a place")
+st.header("1  Select the site")
 place_col1, place_col2 = st.columns(2)
 with place_col1:
     country = st.selectbox("Country", list(COUNTRIES))
@@ -208,9 +386,6 @@ country_data = COUNTRIES[country]
 selected_location_data = country_data["locations"][location]
 water_stress_label = selected_location_data[2]
 water_stress_category = selected_location_data[3]
-
-# Filled after the design and community levers are evaluated. Keeping the
-# placeholder here makes the live map appear near the top of the experience.
 live_map_placeholder = st.empty()
 
 st.header("2  Choose a starting scenario")
@@ -218,7 +393,7 @@ scenario_name = st.radio(
     "Facility scenario",
     list(SCENARIOS),
     horizontal=True,
-    help="Choose a preset, then adjust it below if needed.",
+    help="Choose a preset, then adjust it below.",
 )
 scenario = SCENARIOS[scenario_name]
 
@@ -232,7 +407,6 @@ with st.expander("Adjust facility assumptions", expanded=True):
             value=scenario["capacity"],
             step=1.0,
             format="%.0f",
-            help="The electrical capacity used by computing equipment.",
         )
         wue_default = max(0.0, country_data["benchmark"] + scenario["wue_delta"])
         wue = st.number_input(
@@ -246,11 +420,8 @@ with st.expander("Adjust facility assumptions", expanded=True):
         )
     with input_col2:
         cooling_choices = [
-            "Hybrid cooling",
-            "Air cooling",
-            "Liquid cooling",
-            "Evaporative cooling",
-            "Unknown",
+            "Hybrid cooling", "Air cooling", "Liquid cooling",
+            "Evaporative cooling", "Unknown",
         ]
         cooling_system = st.selectbox(
             "Cooling approach",
@@ -258,11 +429,8 @@ with st.expander("Adjust facility assumptions", expanded=True):
             index=cooling_choices.index(scenario["cooling"]),
         )
         source_choices = [
-            "Recycled or reclaimed water",
-            "Closed-loop system",
-            "Mixed supply",
-            "Potable water",
-            "Unknown",
+            "Recycled or reclaimed water", "Closed-loop system",
+            "Mixed supply", "Potable water", "Unknown",
         ]
         water_source = st.selectbox(
             "Primary water source",
@@ -283,13 +451,9 @@ st.header("3  Confirm the available evidence")
 st.caption("Choose Unknown unless a utility, regulator or project document has confirmed the information.")
 evidence_col1, evidence_col2, evidence_col3 = st.columns(3)
 with evidence_col1:
-    headroom_status = st.selectbox(
-        "Local water-system headroom", ["Unknown", "Confirmed", "Not adequate"]
-    )
+    headroom_status = st.selectbox("Local water-system headroom", ["Unknown", "Confirmed", "Not adequate"])
 with evidence_col2:
-    cumulative_status = st.selectbox(
-        "Nearby cumulative demand", ["Unknown", "Assessed", "Not assessed"]
-    )
+    cumulative_status = st.selectbox("Nearby cumulative demand", ["Unknown", "Assessed", "Not assessed"])
 with evidence_col3:
     safeguard_status = st.selectbox(
         "Community or ecological safeguard",
@@ -309,7 +473,6 @@ with st.expander("👥 Add community context", expanded=False):
             max_value=5_000_000,
             value=100_000,
             step=10_000,
-            help="Enter a utility service-area or local planning estimate where available.",
         )
         water_dependence = st.selectbox(
             "Dependence on the same potable-water supply",
@@ -319,13 +482,15 @@ with st.expander("👥 Add community context", expanded=False):
         sensitive_receptors = st.multiselect(
             "Water-sensitive users nearby",
             ["Hospitals", "Schools", "Public housing", "Small businesses", "Water-dependent livelihoods"],
-            help="Select only users identified within the relevant service area.",
         )
         consultation_status = st.selectbox(
             "Community engagement status",
             ["Not started", "Planned", "In progress", "Completed and documented"],
         )
 
+# -----------------------------
+# Calculations and screening
+# -----------------------------
 normal_m3_day, peak_m3_day, annual_m3 = calculate_demand(capacity_mw, wue, peak_factor)
 benchmark_peak = capacity_mw * 24 * country_data["benchmark"] * peak_factor
 difference_pct = ((peak_m3_day - benchmark_peak) / benchmark_peak * 100) if benchmark_peak else 0
@@ -333,16 +498,16 @@ benchmark_annual_m3 = capacity_mw * 8760 * country_data["benchmark"]
 annual_water_difference = benchmark_annual_m3 - annual_m3
 community_litres_per_person = peak_m3_day * 1000 / shared_population
 
-# A transparent screening index. It prioritises conditions that could intensify
-# competition for shared water; it is not a measured health or welfare impact.
-community_pressure_score = 0
-community_pressure_score += 25 if water_source == "Potable water" else 10 if water_source == "Mixed supply" else 0
-community_pressure_score += 25 if headroom_status == "Not adequate" else 15 if headroom_status == "Unknown" else 0
-community_pressure_score += 20 if water_stress_category >= 3 else 12 if water_stress_category == 2 else 8 if water_stress_category == -1 else 0
-community_pressure_score += 12 if cumulative_status != "Assessed" else 0
-community_pressure_score += min(10, len(sensitive_receptors) * 2)
-community_pressure_score += 8 if consultation_status == "Not started" else 4 if consultation_status == "Planned" else 0
-community_pressure_score = min(100, community_pressure_score)
+community_score_components = {
+    "Potable-water reliance": 25 if water_source == "Potable water" else 10 if water_source == "Mixed supply" else 0,
+    "Utility headroom": 25 if headroom_status == "Not adequate" else 15 if headroom_status == "Unknown" else 0,
+    "Regional water stress / missing coverage": 20 if water_stress_category >= 3 else 12 if water_stress_category == 2 else 8 if water_stress_category == -1 else 0,
+    "Cumulative demand not assessed": 12 if cumulative_status != "Assessed" else 0,
+    "Sensitive users identified": min(10, len(sensitive_receptors) * 2),
+    "Community engagement gap": 8 if consultation_status == "Not started" else 4 if consultation_status == "Planned" else 0,
+}
+community_pressure_score = min(100, sum(community_score_components.values()))
+
 if community_pressure_score >= 70:
     community_pressure_level = "High priority"
 elif community_pressure_score >= 40:
@@ -369,74 +534,84 @@ if consultation_status != "Completed and documented":
     evidence_gaps.append("documented community engagement")
 
 if safeguard_status == "Triggered" or headroom_status == "Not adequate":
-    decision = "Exclude or redesign"
+    decision = "STOP"
     explanation = "A binding water, community or ecological safeguard has failed."
     decision_type = "error"
-elif evidence_gaps:
-    decision = "Further evidence required"
-    explanation = "Critical evidence is missing. AquaSite does not interpret missing data as safety."
-    decision_type = "warning"
 elif wue > country_data["benchmark"] and water_source == "Potable water":
-    decision = "Redesign before review"
-    explanation = "The design exceeds the comparison benchmark and relies primarily on potable water."
+    decision = "STOP"
+    explanation = "The design exceeds the comparison value while relying primarily on potable water."
     decision_type = "error"
+elif evidence_gaps or community_pressure_score >= 40:
+    decision = "MITIGATE"
+    explanation = "The site may be viable, but evidence or design safeguards remain unresolved."
+    decision_type = "warning"
 else:
-    decision = "Proceed with conditions"
-    explanation = "The proposal passes this first screen, subject to formal verification."
+    decision = "PROCEED"
+    explanation = "This first screen shows lower concern, subject to formal verification and monitoring."
     decision_type = "success"
 
-# Turn the full interface into an immediate decision signal.
+evidence_checks = {
+    "Utility headroom": headroom_status != "Unknown",
+    "Cumulative demand": cumulative_status == "Assessed",
+    "Community/ecological safeguard": safeguard_status != "Unknown",
+    "Primary water source": water_source != "Unknown",
+    "Cooling approach": cooling_system != "Unknown",
+    "Regional water-stress coverage": water_stress_label != "NoData",
+    "Community water dependence": water_dependence != "Unknown",
+    "Community engagement": consultation_status == "Completed and documented",
+}
+evidence_verified = sum(evidence_checks.values())
+evidence_total = len(evidence_checks)
+evidence_confidence = round(evidence_verified / evidence_total * 100)
+
 if decision_type == "error" or community_pressure_score >= 70:
     page_signal = "RED"
-    signal_title = "Do not proceed without redesign"
+    signal_title = "STOP — redesign or reconsider the site"
     signal_explanation = "A binding safeguard, capacity failure or high-priority community concern is present."
-    page_background = "radial-gradient(circle at 85% 8%, rgba(239,68,68,.28), transparent 30%), linear-gradient(145deg, #21070b 0%, #451018 52%, #67151d 100%)"
     signal_colour = "#fca5a5"
 elif decision_type == "warning" or community_pressure_score >= 40:
     page_signal = "AMBER"
-    signal_title = "Pause and resolve the evidence gaps"
-    signal_explanation = "The site may be viable, but water and community safeguards are not yet demonstrated."
-    page_background = "radial-gradient(circle at 85% 8%, rgba(245,158,11,.25), transparent 30%), linear-gradient(145deg, #211303 0%, #3f2608 52%, #55340a 100%)"
+    signal_title = "MITIGATE — resolve safeguards before proceeding"
+    signal_explanation = "The site may be viable, but water or community safeguards are not yet demonstrated."
     signal_colour = "#fcd34d"
 else:
     page_signal = "GREEN"
-    signal_title = "Proceed with verified conditions"
+    signal_title = "PROCEED — with verified conditions"
     signal_explanation = "This first screen shows lower concern, subject to formal validation and monitoring."
-    page_background = "radial-gradient(circle at 85% 8%, rgba(34,197,94,.22), transparent 30%), linear-gradient(145deg, #031b16 0%, #073b2b 52%, #07533a 100%)"
     signal_colour = "#86efac"
 
 st.markdown(
     f"""
     <style>
-    .stApp {{ background: {page_background} !important; }}
     .decision-signal {{
-        border: 2px solid {signal_colour}; border-radius: 18px; padding: 18px 22px;
-        background: rgba(3, 12, 24, .72); box-shadow: 0 12px 30px rgba(0,0,0,.25);
-        margin: 6px 0 18px 0;
+        border: 2px solid {signal_colour};
+        border-left: 9px solid {signal_colour};
     }}
-    .decision-signal strong {{ color: {signal_colour}; font-size: 1.25rem; }}
-    .decision-signal span {{ color: #f8fafc; }}
+    .decision-title {{ color: {signal_colour}; }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
+# -----------------------------
+# Live command map
+# -----------------------------
 signal_rgb = {
     "RED": [239, 68, 68, 245],
     "AMBER": [245, 158, 11, 245],
     "GREEN": [34, 197, 94, 245],
 }[page_signal]
+
 live_lat, live_lon = selected_location_data[0], selected_location_data[1]
-live_site_data = pd.DataFrame(
-    [{
-        "lat": live_lat,
-        "lon": live_lon,
-        "Name": f"Proposed {capacity_mw:.0f} MW site",
-        "Type": f"{page_signal}: {signal_title}",
-        "Layer meaning": f"Peak demand {peak_m3_day:,.0f} m³/day · Community score {community_pressure_score}/100",
-        "Country": location,
-    }]
-)
+live_site_data = pd.DataFrame([{
+    "lat": live_lat,
+    "lon": live_lon,
+    "Name": f"Proposed {capacity_mw:.0f} MW site",
+    "Type": f"{page_signal}: {signal_title}",
+    "Layer meaning": f"Peak demand {peak_m3_day:,.0f} m³/day · Community priority {community_pressure_score}/100",
+    "Country": location,
+}])
+
 live_boundary_url = (
     "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/"
     "releaseData/gbOpen/MYS/ADM1/geoBoundaries-MYS-ADM1_simplified.geojson"
@@ -450,6 +625,7 @@ live_boundary_colour = (
     if country == "Malaysia"
     else [147, 51, 234, 115]
 )
+
 live_boundary_layer = pdk.Layer(
     "GeoJsonLayer",
     data=live_boundary_url,
@@ -484,15 +660,15 @@ live_site_layer = pdk.Layer(
     line_width_min_pixels=3,
     pickable=True,
 )
-live_centre_data = pd.DataFrame(
-    [{
-        **centre,
-        "Name": f"{centre['operator']} {centre['name']}",
-        "Type": "Existing data centre",
-        "Layer meaning": centre["place"],
-        "Country": centre["country"],
-    } for centre in DATA_CENTRES if centre["country"] == country]
-)
+
+live_centre_data = pd.DataFrame([{
+    **centre,
+    "Name": f"{centre['operator']} {centre['name']}",
+    "Type": "Existing data centre",
+    "Layer meaning": centre["place"],
+    "Country": centre["country"],
+} for centre in DATA_CENTRES if centre["country"] == country])
+
 live_centre_layer = pdk.Layer(
     "ScatterplotLayer",
     data=live_centre_data,
@@ -506,6 +682,7 @@ live_centre_layer = pdk.Layer(
     line_width_min_pixels=2,
     pickable=True,
 )
+
 live_view = pdk.ViewState(
     latitude=1.36 if country == "Singapore" else 4.15,
     longitude=103.82 if country == "Singapore" else 101.75,
@@ -525,9 +702,10 @@ live_deck = pdk.Deck(
 with live_map_placeholder.container():
     st.markdown(
         f"""
-        <div class="mission-card">
-          <h3>⚡ Live Site Command View · {page_signal}</h3>
-          <p>{location} · {capacity_mw:.0f} MW · Move any lever below and watch this view respond.</p>
+        <div class="command-card">
+          <div class="eyebrow">Live decision view</div>
+          <h3>{page_signal} · {location}</h3>
+          <p>{capacity_mw:.0f} MW proposed site · Adjust any facility or safeguard input below to update the map and decision.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -535,7 +713,7 @@ with live_map_placeholder.container():
     live_metric1, live_metric2, live_metric3, live_metric4 = st.columns(4)
     live_metric1.metric("Live signal", page_signal)
     live_metric2.metric("Peak water demand", f"{peak_m3_day:,.0f} m³/day")
-    live_metric3.metric("Community pressure", f"{community_pressure_score}/100")
+    live_metric3.metric("Community priority", f"{community_pressure_score}/100")
     live_metric4.metric(
         "Annual water vs benchmark",
         f"{abs(annual_water_difference):,.0f} m³",
@@ -544,54 +722,34 @@ with live_map_placeholder.container():
     )
     st.pydeck_chart(live_deck, width="stretch", height=460)
     st.markdown(
-        '<div class="map-key">🔴 Stop / redesign &nbsp; · &nbsp; 🟠 Resolve safeguards &nbsp; · &nbsp; '
+        '<div class="map-key">🔴 Stop / redesign &nbsp; · &nbsp; 🟠 Mitigate / verify &nbsp; · &nbsp; '
         '🟢 Proceed conditionally &nbsp; · &nbsp; 🟡 Existing data centre<br>'
-        '<b>Map response:</b> marker colour follows the decision; halo size grows with peak water demand.</div>',
+        '<b>Live response:</b> marker colour follows the decision; halo size grows with peak water demand.</div>',
         unsafe_allow_html=True,
     )
 
+# -----------------------------
+# Decision + mitigation
+# -----------------------------
 st.divider()
-st.header("Screening result")
+st.header("AquaSite decision")
 st.markdown(
-    f'<div class="decision-signal"><strong>{page_signal}: {signal_title}</strong><br>'
-    f'<span>{signal_explanation}</span></div>',
+    f"""
+    <div class="decision-signal">
+      <div class="decision-kicker">AquaSite safeguard decision</div>
+      <div class="decision-title">{signal_title}</div>
+      <div>{signal_explanation}</div>
+      <div class="confidence-row">
+        <span class="confidence-pill">Evidence confidence: {evidence_confidence}%</span>
+        <span class="confidence-pill">{evidence_verified}/{evidence_total} inputs verified</span>
+        <span class="confidence-pill">Community priority: {community_pressure_level}</span>
+      </div>
+    </div>
+    """,
     unsafe_allow_html=True,
 )
-message = f"**{decision}**\n\n{explanation}"
-if decision_type == "error":
-    st.error(message)
-elif decision_type == "warning":
-    st.warning(message)
-else:
-    st.success(message)
-
-# The mission score is an engagement aid, separate from the screening decision.
-mission_score = 100
-mission_score -= min(30, max(0, int((wue - country_data["benchmark"]) * 25)))
-mission_score -= int(max(0, peak_factor - 1.0) * 40)
-mission_score -= 15 if water_source == "Potable water" else 0
-mission_score -= 10 * len(evidence_gaps)
-mission_score -= 20 if water_stress_category >= 3 else 0
-if safeguard_status == "Triggered" or headroom_status == "Not adequate":
-    mission_score = min(mission_score, 25)
-mission_score = max(0, min(100, mission_score))
-
-if mission_score >= 80:
-    mission_badge = "🏆 Water Guardian"
-elif mission_score >= 60:
-    mission_badge = "🌊 Responsible Planner"
-elif mission_score >= 40:
-    mission_badge = "🛠️ Redesign in progress"
-else:
-    mission_badge = "🚧 Safeguard alert"
-
-score_col1, score_col2 = st.columns([1, 2])
-with score_col1:
-    st.metric("AquaSite mission score", f"{mission_score}/100")
-with score_col2:
-    st.write(f"### {mission_badge}")
-    st.progress(mission_score / 100)
-    st.caption("The score encourages exploration. It is not a regulatory approval score.")
+st.progress(evidence_confidence / 100)
+st.caption("Evidence confidence is separate from risk: a low-data site is never treated as safe by default.")
 
 metric1, metric2, metric3 = st.columns(3)
 metric1.metric("Normal-day demand", f"{normal_m3_day:,.0f} m³/day")
@@ -603,26 +761,37 @@ metric3.metric(
     else f"{abs(difference_pct):.0f}% {'above' if difference_pct > 0 else 'below'}",
 )
 
-st.write("**Try your next move**")
-next_moves = []
+st.subheader("What would make this site viable?")
+mitigation_actions = []
 if water_source == "Potable water":
-    next_moves.append("Switch to recycled or reclaimed water.")
+    mitigation_actions.append(("Reduce freshwater dependency", "Switch to recycled or reclaimed water where technically and regulatorily feasible."))
+elif water_source == "Mixed supply":
+    mitigation_actions.append(("Reduce potable-water share", "Increase the reclaimed-water fraction and document the potable-water fallback case."))
 if wue > country_data["benchmark"]:
-    next_moves.append("Lower WUE by changing the cooling design.")
-if evidence_gaps:
-    next_moves.append("Confirm the missing evidence shown below.")
-if not next_moves:
-    next_moves.append("Stress-test the proposal with a higher peak-demand factor.")
-for move in next_moves[:3]:
-    st.write(f"- {move}")
+    mitigation_actions.append(("Improve water efficiency", f"Reduce WUE toward or below the {country_data['benchmark']:.1f} m³/MWh comparison value."))
+if headroom_status != "Confirmed":
+    mitigation_actions.append(("Verify utility headroom", "Obtain written confirmation of normal and drought-period capacity from the relevant water authority."))
+if cumulative_status != "Assessed":
+    mitigation_actions.append(("Assess cumulative demand", "Include existing, approved and proposed nearby developments in the local water-capacity assessment."))
+if consultation_status != "Completed and documented":
+    mitigation_actions.append(("Close the community safeguard", "Document affected users, engagement, concerns raised and how the design changed in response."))
+
+if mitigation_actions:
+    for i, (title, detail) in enumerate(mitigation_actions[:4], 1):
+        st.markdown(f"**{i}. {title}**  \n{detail}")
+else:
+    st.success("No immediate mitigation trigger is identified in this first screen. Maintain monitoring and formal verification.")
 
 if evidence_gaps:
-    st.write("**What must be checked next**")
-    for item in evidence_gaps:
-        st.write(f"- Confirm {item} with the appropriate authority or project evidence.")
+    with st.expander("Evidence still required"):
+        for item in evidence_gaps:
+            st.write(f"- Confirm {item} with the appropriate authority or project evidence.")
 
+# -----------------------------
+# Detailed tabs
+# -----------------------------
 result_tab, community_tab, map_tab, method_tab = st.tabs(
-    ["📄 Plain-language result", "👥 Community impact", "🗺️ Water-stress map", "🧪 Method and sources"]
+    ["📄 Decision summary", "👥 Community impact", "🗺️ Water-stress map", "🧪 Method and sources"]
 )
 
 with result_tab:
@@ -632,7 +801,7 @@ with result_tab:
         f"**{normal_m3_day:,.0f} m³/day** under normal conditions and **{peak_m3_day:,.0f} m³/day** "
         f"under the selected peak scenario. The estimate assumes a WUE of **{wue:.1f} m³/MWh**, "
         f"**{cooling_system.lower()}** and **{water_source.lower()}**. AquaSite's preliminary outcome "
-        f"is **{decision.lower()}**. Validation is required from the {country_data['authority']}."
+        f"is **{decision}**. Validation is required from the {country_data['authority']}."
     )
     st.caption(
         f"Comparison reference: {country_data['benchmark_name']} at "
@@ -647,16 +816,22 @@ with community_tab:
         "remove this amount from household supply."
     )
     community_metric1, community_metric2, community_metric3 = st.columns(3)
-    community_metric1.metric("Community pressure score", f"{community_pressure_score}/100")
+    community_metric1.metric("Community screening priority", f"{community_pressure_score}/100")
     community_metric2.metric("Screening level", community_pressure_level)
     community_metric3.metric(
-        "Peak demand ÷ shared population",
+        "Facility-demand scale equivalent",
         f"{community_litres_per_person:,.1f} L/person/day",
-        help="A scale comparison using your population input—not predicted household water loss.",
+        help="Scale comparison only. This is not predicted household water loss or displacement.",
     )
     st.progress(community_pressure_score / 100)
+
+    with st.expander("Why did this site receive this community screening score?"):
+        for label, points in community_score_components.items():
+            st.write(f"- {label}: **+{points}**")
+        st.caption("This is a transparent screening index, not a measured social-impact or health score.")
+
     if community_pressure_score >= 70:
-        st.error("🚨 High-priority community review: pause siting until shared-system capacity, vulnerable users and drought protections are verified.")
+        st.error("🚨 High-priority review: pause siting until shared-system capacity, vulnerable users and drought protections are verified.")
     elif community_pressure_score >= 40:
         st.warning("⚠️ Safeguards required: resolve the highlighted evidence and engagement gaps before approval.")
     else:
@@ -672,6 +847,7 @@ with community_tab:
             st.write("- No sensitive users entered yet—confirm this through local mapping and engagement.")
         st.write(f"- Shared-system population used: **{shared_population:,} people**")
         st.write(f"- Potable-water dependence: **{water_dependence}**")
+
     with impact_col2:
         st.write("**Community safeguards to unlock**")
         safeguard_actions = []
@@ -691,15 +867,16 @@ with community_tab:
     st.info(
         f"**Community narrative:** At peak operation, the proposed facility's modelled demand is "
         f"**{peak_m3_day:,.0f} m³/day**. Dividing that by the entered shared-system population gives "
-        f"**{community_litres_per_person:,.1f} litres per person per day** as a scale comparison. "
-        f"The current community screen is **{community_pressure_level.lower()}** and requires local validation."
+        f"**{community_litres_per_person:,.1f} litres per person per day** as a facility-demand scale equivalent. "
+        f"This is not predicted household water loss. The current community screen is "
+        f"**{community_pressure_level.lower()}** and requires local validation."
     )
 
 with map_tab:
     st.subheader("AquaSite Explorer")
     st.write(
-        "Scout the region, reveal infrastructure clusters and test whether a proposed site "
-        "needs a water-risk alert. Hover over any marker for details."
+        "Explore regional water-stress signals, existing data-centre clusters and the selected proposal. "
+        "Hover over markers for details."
     )
     control1, control2, control3 = st.columns([1, 1, 2])
     with control1:
@@ -720,6 +897,7 @@ with map_tab:
     alert1.metric("Operating examples shown", len(DATA_CENTRES))
     alert2.metric("Within 35 km", len(nearby_centres))
     alert3.metric("Selected stress signal", water_stress_label)
+
     if water_stress_category >= 3:
         st.error("🚨 WATER-STRESS ALERT — High baseline-stress signal. Redesign freshwater-intensive cooling and verify basin, utility and seasonal conditions.")
     elif water_stress_category == 2:
@@ -728,21 +906,19 @@ with map_tab:
         st.warning("🟣 EVIDENCE-GAP ALERT — NoData does not mean no risk. Local water-capacity evidence is required.")
     else:
         st.success("🟢 REGIONAL SCREEN — Baseline stress is low, but local headroom and cumulative demand still need verification.")
+
     if len(nearby_centres) >= 2:
         st.info(f"🏙️ CLUSTER WATCH — {len(nearby_centres)} documented facilities are within 35 km. Ask the utility to assess their combined demand.")
 
-    st.caption("The map now zooms to your selected site. Scroll to zoom, drag to pan and hover for details.")
+    selected_site_data = pd.DataFrame([{
+        "lat": selected_lat,
+        "lon": selected_lon,
+        "Name": "Proposed site",
+        "Type": location,
+        "Layer meaning": f"Water-stress signal: {water_stress_label}",
+        "Country": country,
+    }])
 
-    selected_site_data = pd.DataFrame(
-        [{
-            "lat": selected_lat,
-            "lon": selected_lon,
-            "Name": "Proposed site",
-            "Type": location,
-            "Layer meaning": f"Water-stress signal: {water_stress_label}",
-            "Country": country,
-        }]
-    )
     site_layer = pdk.Layer(
         "ScatterplotLayer",
         data=selected_site_data,
@@ -750,7 +926,7 @@ with map_tab:
         get_radius=2200 if country == "Singapore" else 6500,
         radius_min_pixels=10,
         radius_max_pixels=18,
-        get_fill_color=[14, 165, 233, 255],
+        get_fill_color=signal_rgb,
         stroked=True,
         get_line_color=[255, 255, 255, 255],
         line_width_min_pixels=3,
@@ -765,6 +941,7 @@ with map_tab:
         "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/"
         "releaseData/gbOpen/SGP/ADM0/geoBoundaries-SGP-ADM0_simplified.geojson"
     )
+
     if country == "Malaysia":
         stress_polygon_layer = pdk.Layer(
             "GeoJsonLayer",
@@ -783,34 +960,22 @@ with map_tab:
             line_width_min_pixels=1,
             pickable=False,
         )
-        risk_label_data = pd.DataFrame(
-            [
-                {"lat": 6.10, "lon": 100.52, "label": "KEDAH · HIGH"},
-                {"lat": 6.47, "lon": 100.20, "label": "PERLIS · MED-HIGH"},
-                {"lat": 5.35, "lon": 100.46, "label": "PENANG · LOW"},
-                {"lat": 4.72, "lon": 101.05, "label": "PERAK · LOW"},
-                {"lat": 5.35, "lon": 102.05, "label": "KELANTAN · LOW"},
-                {"lat": 5.05, "lon": 103.02, "label": "TERENGGANU · LOW"},
-                {"lat": 3.85, "lon": 102.35, "label": "PAHANG · LOW"},
-                {"lat": 3.35, "lon": 101.38, "label": "SELANGOR · LOW"},
-                {"lat": 3.14, "lon": 101.69, "label": "KUALA LUMPUR · LOW"},
-                {"lat": 2.92, "lon": 101.70, "label": "PUTRAJAYA · LOW"},
-                {"lat": 2.75, "lon": 102.22, "label": "NEGERI SEMBILAN · LOW"},
-                {"lat": 2.25, "lon": 102.25, "label": "MELAKA · LOW"},
-                {"lat": 2.05, "lon": 103.35, "label": "JOHOR · LOW"},
-                {"lat": 3.10, "lon": 113.15, "label": "SARAWAK · LOW"},
-                {"lat": 5.45, "lon": 117.05, "label": "SABAH · LOW"},
-                {"lat": 5.30, "lon": 115.23, "label": "LABUAN · LOW"},
-            ]
-        )
+        risk_label_data = pd.DataFrame([
+            {"lat": 6.10, "lon": 100.52, "label": "KEDAH · HIGH"},
+            {"lat": 6.47, "lon": 100.20, "label": "PERLIS · MED-HIGH"},
+            {"lat": 3.35, "lon": 101.38, "label": "SELANGOR · LOW"},
+            {"lat": 3.14, "lon": 101.69, "label": "KUALA LUMPUR · LOW"},
+            {"lat": 2.05, "lon": 103.35, "label": "JOHOR · LOW"},
+            {"lat": 3.10, "lon": 113.15, "label": "SARAWAK · LOW"},
+            {"lat": 5.45, "lon": 117.05, "label": "SABAH · LOW"},
+        ])
         risk_label_layer = pdk.Layer(
             "TextLayer",
             data=risk_label_data,
             get_position="[lon, lat]",
             get_text="label",
             get_size=16,
-            get_color=[255, 255, 255, 255],
-            get_angle=0,
+            get_color=[255,255,255,255],
             get_text_anchor="'middle'",
             get_alignment_baseline="'center'",
             billboard=True,
@@ -823,34 +988,30 @@ with map_tab:
             opacity=overlay_strength / 255,
             stroked=True,
             filled=True,
-            get_fill_color=[147, 51, 234, 150],
-            get_line_color=[216, 180, 254, 235],
+            get_fill_color=[147,51,234,150],
+            get_line_color=[216,180,254,235],
             line_width_min_pixels=2,
             pickable=False,
         )
+        risk_label_layer = None
 
     scope = st.radio(
         "Data-centre view",
         ["Selected country", "Singapore + Malaysia"],
         horizontal=True,
-        help="Use the regional view to explore cross-border clustering.",
     )
     visible_centres = [
         centre for centre in DATA_CENTRES
         if scope == "Singapore + Malaysia" or centre["country"] == country
     ]
-    centre_data = pd.DataFrame(
-        [
-            {
-                **centre,
-                "Name": f"{centre['operator']} {centre['name']}",
-                "Type": "Operating data centre (public example)",
-                "Country": centre["country"],
-                "Layer meaning": f"{centre['place']} · {centre['precision']}",
-            }
-            for centre in visible_centres
-        ]
-    )
+    centre_data = pd.DataFrame([{
+        **centre,
+        "Name": f"{centre['operator']} {centre['name']}",
+        "Type": "Operating data centre (public example)",
+        "Country": centre["country"],
+        "Layer meaning": f"{centre['place']} · {centre['precision']}",
+    } for centre in visible_centres])
+
     centre_layer = pdk.Layer(
         "ScatterplotLayer",
         data=centre_data,
@@ -858,16 +1019,17 @@ with map_tab:
         get_radius=1600 if country == "Singapore" else 3800,
         radius_min_pixels=6,
         radius_max_pixels=13,
-        get_fill_color=[250, 204, 21, 245],
+        get_fill_color=[250,204,21,245],
         stroked=True,
-        get_line_color=[120, 53, 15, 255],
+        get_line_color=[120,53,15,255],
         line_width_min_pixels=2,
         pickable=True,
     )
+
     active_layers = []
     if show_stress:
         active_layers.append(stress_polygon_layer)
-        if country == "Malaysia":
+        if risk_label_layer is not None:
             active_layers.append(risk_label_layer)
     active_layers.append(site_layer)
     if show_centres:
@@ -878,29 +1040,29 @@ with map_tab:
             "Map focus",
             ["Malaysia stress overview", "Selected site"],
             horizontal=True,
-            help="Overview reveals the stressed northern states; Selected site zooms into your proposal.",
         )
     else:
         map_focus = "Selected site"
+
     if map_focus == "Malaysia stress overview":
         map_latitude, map_longitude, map_zoom = 4.45, 101.55, 5.25
     else:
         map_latitude, map_longitude = selected_lat, selected_lon
         map_zoom = 9.4 if country == "Singapore" else 7.0
-    view_state = pdk.ViewState(
-        latitude=map_latitude,
-        longitude=map_longitude,
-        zoom=map_zoom,
-        pitch=12,
-    )
+
     deck = pdk.Deck(
         layers=active_layers,
-        initial_view_state=view_state,
+        initial_view_state=pdk.ViewState(
+            latitude=map_latitude,
+            longitude=map_longitude,
+            zoom=map_zoom,
+            pitch=12,
+        ),
         tooltip={
             "html": "<b>{Name}</b><br/>{Type}<br/>{Layer meaning}<br/>{Country}",
-            "style": {"backgroundColor": "#102A43", "color": "white"},
+            "style": {"backgroundColor": "#07182b", "color": "white"},
         },
-        map_style="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+        map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
     )
     st.pydeck_chart(deck, width="stretch", height=540)
 
@@ -910,11 +1072,6 @@ with map_tab:
     legend3.markdown("🟠 **High**")
     legend4.markdown("🟣 **NoData**")
     legend5.markdown("🟡 **Existing centre** · 🔵 **Proposed site**")
-
-    if country == "Malaysia":
-        stress_card1, stress_card2 = st.columns(2)
-        stress_card1.warning("🟠 **Kedah — High (40–80%)**\n\nPriority area for deeper seasonal and basin-level review.")
-        stress_card2.warning("🟡 **Perlis — Medium-high (20–40%)**\n\nRequire local supply and cumulative-demand verification.")
 
     st.write("**Nearest documented facilities**")
     if nearby_centres:
@@ -934,25 +1091,15 @@ with map_tab:
     st.markdown(
         """
         <div class="map-key"><b>Map guide</b> — coloured state polygons show the available
-        province-level WRI screening result. Select Kedah or Perlis above to jump directly to
-        a stressed area. A green regional result still requires a local utility check.</div>
+        province-level WRI screening result. A green regional result still requires a
+        local utility headroom and cumulative-demand check.</div>
         """,
         unsafe_allow_html=True,
     )
-
     st.caption(
         "Source: WRI Aqueduct 4.0 country and province rankings, total-use weighting. "
-        "Singapore is shown as NoData because the 2023 rankings file does not return a baseline "
-        "water-stress category for it. Malaysian colours follow administrative boundaries and "
-        "represent province-level aggregates, not sub-basin or utility-service boundaries."
-    )
-    st.caption(
-        "Facility markers are a curated, non-exhaustive set of operator-reported operating sites. "
-        "Markers labelled approximate show a campus or district, not an exact facility footprint."
-    )
-    st.warning(
-        "A low regional category does not establish local utility headroom. Aqueduct is a "
-        "prioritisation layer and must be combined with local water-system evidence."
+        "Singapore is shown as NoData because the cited rankings file does not return a baseline "
+        "water-stress category for it. Malaysian colours are province-level screening signals."
     )
 
 with method_tab:
@@ -961,14 +1108,14 @@ with method_tab:
     st.latex(r"\text{Peak demand} = \text{Normal daily demand} \times \text{peak factor}")
     st.write("**How the community screen works**")
     st.write(
-        "The 0–100 screening score adds disclosed points for potable-water reliance, uncertain or "
-        "inadequate utility headroom, water stress or missing stress data, unassessed cumulative "
+        "The 0–100 screening priority adds disclosed points for potable-water reliance, uncertain "
+        "or inadequate utility headroom, water stress or missing stress data, unassessed cumulative "
         "demand, sensitive users and incomplete engagement. It is a prioritisation index—not a "
         "measured social impact, approval score or prediction of household water loss."
     )
     st.latex(
-        r"\text{Scale comparison} = \frac{\text{facility peak demand}\times 1000}"
-        r"{\text{population sharing the water system}}"
+        r"\text{Facility-demand scale equivalent} = "
+        r"\frac{\text{facility peak demand}\times 1000}{\text{population sharing the water system}}"
     )
     st.write(f"**Country context**\n\n{country_data['source_note']}")
     st.write(
@@ -977,7 +1124,7 @@ with method_tab:
         "- Location markers do not show actual projects or confidential utility capacity.\n"
         "- The peak factor is illustrative until project-specific data are available.\n"
         "- A comparison benchmark is not automatically a statutory approval threshold.\n"
-        "- The tool supports screening and does not grant regulatory approval."
+        "- AquaSite supports screening and does not grant regulatory approval."
     )
     st.markdown(
         "**Sources**\n\n"
@@ -985,18 +1132,12 @@ with method_tab:
         "news-and-events/media-room/media-releases/2024/05/green-dc-roadmap.pdf)\n"
         "- [Malaysia Planning Guideline for Data Centre](https://jpbd.penang.gov.my/images/"
         "faris/pdf/2025/GARIS%20PANDUAN/GPP%20PUSAT%20DATA%20-%20ENG.pdf)\n"
-        "- [WRI Aqueduct 4.0 country rankings](https://www.wri.org/data/"
-        "aqueduct-40-country-rankings)\n"
-        "- [Equinix Singapore facilities](https://www.equinix.com/data-centers/"
-        "asia-pacific-colocation/singapore-colocation)\n"
-        "- [Digital Realty Singapore facilities](https://www.digitalrealty.com/"
-        "data-centers/asia-pacific/singapore)\n"
-        "- [NTT Asia-Pacific data centres](https://services.global.ntt/en-us/services-and-products/"
-        "global-data-centers/global-locations/asia-pacific)\n"
-        "- [AirTrunk JHB1](https://airtrunk.com/airtrunk-opens-ai-ready-data-centre-in-malaysia-"
-        "accelerating-innovation-and-the-energy-transition/)\n"
-        "- [TM One data-centre overview](https://www.tmone.com.my/think-tank/"
-        "accelerate-digital-transformation-in-bfsi-energy-and-industry/)"
+        "- [WRI Aqueduct 4.0 country rankings](https://www.wri.org/data/aqueduct-40-country-rankings)\n"
+        "- [Equinix Singapore facilities](https://www.equinix.com/data-centers/asia-pacific-colocation/singapore-colocation)\n"
+        "- [Digital Realty Singapore facilities](https://www.digitalrealty.com/data-centers/asia-pacific/singapore)\n"
+        "- [NTT Asia-Pacific data centres](https://services.global.ntt/en-us/services-and-products/global-data-centers/global-locations/asia-pacific)\n"
+        "- [AirTrunk JHB1](https://airtrunk.com/airtrunk-opens-ai-ready-data-centre-in-malaysia-accelerating-innovation-and-the-energy-transition/)\n"
+        "- [TM One data-centre overview](https://www.tmone.com.my/think-tank/accelerate-digital-transformation-in-bfsi-energy-and-industry/)"
     )
 
 st.caption("AquaSite prototype — demonstration purposes only.")
