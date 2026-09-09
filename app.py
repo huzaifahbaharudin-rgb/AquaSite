@@ -17,6 +17,10 @@ st.markdown(
           linear-gradient(145deg, #031426 0%, #08233d 52%, #0b3152 100%);
         color: #e6f4ff;
         font-size: 17px;
+        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    html, body, [class*="css"] {
+        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     .block-container {
         max-width: 1380px;
@@ -34,22 +38,29 @@ st.markdown(
     #MainMenu, footer { visibility: hidden; }
 
     h1 {
-        font-size: clamp(2.8rem, 5vw, 4.8rem) !important;
-        line-height: .98 !important;
-        letter-spacing: -.045em !important;
+        font-size: clamp(2.9rem, 5vw, 4.9rem) !important;
+        line-height: .96 !important;
+        letter-spacing: -.055em !important;
+        font-weight: 850 !important;
         margin-bottom: .6rem !important;
-        background: linear-gradient(90deg, #f0f9ff 0%, #7dd3fc 48%, #38bdf8 100%);
+        background: linear-gradient(90deg, #f8fdff 0%, #bae6fd 44%, #38bdf8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        text-wrap: balance;
     }
     h2 {
-        color: #bae6fd !important;
-        font-size: 1.65rem !important;
-        letter-spacing: -.025em;
+        color: #d9f3ff !important;
+        font-size: 1.72rem !important;
+        letter-spacing: -.035em;
+        font-weight: 780 !important;
         margin-top: 2.1rem !important;
         margin-bottom: 1rem !important;
     }
-    h3 { color: #bae6fd !important; letter-spacing: -.015em; }
+    h3 {
+        color: #c9efff !important;
+        letter-spacing: -.025em;
+        font-weight: 760 !important;
+    }
     p, label, li, .stMarkdown, [data-testid="stCaptionContainer"] {
         color: #dbeafe !important;
         line-height: 1.55;
@@ -254,6 +265,107 @@ st.markdown(
         background: linear-gradient(90deg, transparent, rgba(125,211,252,.20), transparent) !important;
         margin: 2rem 0 !important;
     }
+
+    /* Safeguard alarm states */
+    @keyframes aquasitePulseRed {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(239,68,68,.0), 0 18px 58px rgba(0,0,0,.28);
+        }
+        50% {
+            box-shadow: 0 0 0 9px rgba(239,68,68,.10), 0 0 38px rgba(239,68,68,.32), 0 18px 58px rgba(0,0,0,.32);
+        }
+    }
+    @keyframes aquasitePulseAmber {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(245,158,11,.0), 0 18px 58px rgba(0,0,0,.28);
+        }
+        50% {
+            box-shadow: 0 0 0 8px rgba(245,158,11,.08), 0 0 34px rgba(245,158,11,.24), 0 18px 58px rgba(0,0,0,.31);
+        }
+    }
+    @keyframes alarmDot {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(.72); opacity: .55; }
+    }
+    .safeguard-banner {
+        position: sticky;
+        top: 3.6rem;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 15px 18px;
+        margin: 8px 0 18px 0;
+        border-radius: 18px;
+        backdrop-filter: blur(18px);
+        font-weight: 760;
+        letter-spacing: -.01em;
+    }
+    .safeguard-banner .alarm-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        flex: 0 0 12px;
+        animation: alarmDot 1.1s ease-in-out infinite;
+    }
+    .safeguard-banner .alarm-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .safeguard-banner .alarm-label {
+        text-transform: uppercase;
+        letter-spacing: .11em;
+        font-size: .69rem;
+        opacity: .82;
+    }
+    .safeguard-banner .alarm-title {
+        font-size: 1.02rem;
+        font-weight: 840;
+    }
+    .safeguard-banner.red {
+        background: linear-gradient(135deg, rgba(84,13,20,.92), rgba(53,8,14,.94));
+        border: 1px solid rgba(248,113,113,.56);
+        color: #fee2e2;
+        animation: aquasitePulseRed 2.1s ease-in-out infinite;
+    }
+    .safeguard-banner.red .alarm-dot {
+        background: #fb7185;
+        box-shadow: 0 0 18px rgba(251,113,133,.85);
+    }
+    .safeguard-banner.amber {
+        background: linear-gradient(135deg, rgba(80,45,6,.92), rgba(52,31,5,.95));
+        border: 1px solid rgba(251,191,36,.52);
+        color: #fef3c7;
+        animation: aquasitePulseAmber 2.5s ease-in-out infinite;
+    }
+    .safeguard-banner.amber .alarm-dot {
+        background: #fbbf24;
+        box-shadow: 0 0 18px rgba(251,191,36,.78);
+    }
+    .safeguard-banner.green {
+        background: linear-gradient(135deg, rgba(5,65,49,.90), rgba(4,47,36,.94));
+        border: 1px solid rgba(74,222,128,.36);
+        color: #dcfce7;
+    }
+    .safeguard-banner.green .alarm-dot {
+        background: #4ade80;
+        box-shadow: 0 0 14px rgba(74,222,128,.48);
+        animation: none;
+    }
+    .signal-word {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: .78rem;
+        font-weight: 850;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        padding: 6px 10px;
+        border-radius: 999px;
+        margin-bottom: 8px;
+    }
+
     @media (max-width: 900px) {
         .block-container { padding-left: 1rem; padding-right: 1rem; }
         .hero-card { padding: 22px; }
@@ -373,7 +485,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-st.caption("Adjust the proposal below and see whether the site should PROCEED, MITIGATE or STOP.")
+st.caption("AquaSite uses a calm green state for lower concern, amber for unresolved safeguards, and red for conditions that should stop or force redesign.")
 
 st.header("1  Select the site")
 place_col1, place_col2 = st.columns(2)
@@ -567,12 +679,12 @@ evidence_confidence = round(evidence_verified / evidence_total * 100)
 if decision_type == "error" or community_pressure_score >= 70:
     page_signal = "RED"
     signal_title = "STOP — redesign or reconsider the site"
-    signal_explanation = "A binding safeguard, capacity failure or high-priority community concern is present."
+    signal_explanation = "A binding water safeguard, capacity failure or high-priority community concern is present."
     signal_colour = "#fca5a5"
 elif decision_type == "warning" or community_pressure_score >= 40:
     page_signal = "AMBER"
     signal_title = "MITIGATE — resolve safeguards before proceeding"
-    signal_explanation = "The site may be viable, but water or community safeguards are not yet demonstrated."
+    signal_explanation = "The site may be viable, but water and/or community safeguards are not yet demonstrated."
     signal_colour = "#fcd34d"
 else:
     page_signal = "GREEN"
@@ -580,15 +692,40 @@ else:
     signal_explanation = "This first screen shows lower concern, subject to formal validation and monitoring."
     signal_colour = "#86efac"
 
+alarm_class = page_signal.lower()
+alarm_icon = "🚨" if page_signal == "RED" else "⚠️" if page_signal == "AMBER" else "✓"
+alarm_short = (
+    "Immediate safeguard action required"
+    if page_signal == "RED"
+    else "Safeguards unresolved — action required"
+    if page_signal == "AMBER"
+    else "Safeguards currently within screening limits"
+)
+
 st.markdown(
     f"""
     <style>
     .decision-signal {{
         border: 2px solid {signal_colour};
-        border-left: 9px solid {signal_colour};
+        border-left: 10px solid {signal_colour};
     }}
     .decision-title {{ color: {signal_colour}; }}
+    .signal-word {{
+        color: {signal_colour};
+        border: 1px solid {signal_colour}66;
+        background: {signal_colour}14;
+    }}
     </style>
+    <div class="safeguard-banner {alarm_class}">
+      <div class="alarm-dot"></div>
+      <div class="alarm-copy">
+        <div class="alarm-label">AquaSite Safeguard Alert</div>
+        <div class="alarm-title">{alarm_icon} {page_signal} · {alarm_short}</div>
+        <div style="font-size:.88rem; opacity:.92; margin-top:2px;">
+          Community priority: <b>{community_pressure_level}</b> · {community_pressure_score}/100
+        </div>
+      </div>
+    </div>
     """,
     unsafe_allow_html=True,
 )
@@ -702,9 +839,9 @@ live_deck = pdk.Deck(
 with live_map_placeholder.container():
     st.markdown(
         f"""
-        <div class="command-card">
+        <div class="command-card" style="border-color:{signal_colour}66; box-shadow:0 18px 50px {signal_colour}18;">
           <div class="eyebrow">Live decision view</div>
-          <h3>{page_signal} · {location}</h3>
+          <h3>{alarm_icon} {page_signal} · {location}</h3>
           <p>{capacity_mw:.0f} MW proposed site · Adjust any facility or safeguard input below to update the map and decision.</p>
         </div>
         """,
@@ -713,7 +850,7 @@ with live_map_placeholder.container():
     live_metric1, live_metric2, live_metric3, live_metric4 = st.columns(4)
     live_metric1.metric("Live signal", page_signal)
     live_metric2.metric("Peak water demand", f"{peak_m3_day:,.0f} m³/day")
-    live_metric3.metric("Community priority", f"{community_pressure_score}/100")
+    live_metric3.metric("Community priority", f"{community_pressure_score}/100", delta=community_pressure_level)
     live_metric4.metric(
         "Annual water vs benchmark",
         f"{abs(annual_water_difference):,.0f} m³",
@@ -737,12 +874,13 @@ st.markdown(
     f"""
     <div class="decision-signal">
       <div class="decision-kicker">AquaSite safeguard decision</div>
+      <div class="signal-word">{alarm_icon} {page_signal} status</div>
       <div class="decision-title">{signal_title}</div>
       <div>{signal_explanation}</div>
       <div class="confidence-row">
         <span class="confidence-pill">Evidence confidence: {evidence_confidence}%</span>
         <span class="confidence-pill">{evidence_verified}/{evidence_total} inputs verified</span>
-        <span class="confidence-pill">Community priority: {community_pressure_level}</span>
+        <span class="confidence-pill">Community priority: {community_pressure_level} · {community_pressure_score}/100</span>
       </div>
     </div>
     """,
@@ -751,7 +889,39 @@ st.markdown(
 st.progress(evidence_confidence / 100)
 st.caption("Evidence confidence is separate from risk: a low-data site is never treated as safe by default.")
 
-metric1, metric2, metric3 = st.columns(3)
+community_status_colour = (
+    "#fb7185" if community_pressure_score >= 70
+    else "#fbbf24" if community_pressure_score >= 40
+    else "#4ade80"
+)
+community_status_icon = "🚨" if community_pressure_score >= 70 else "⚠️" if community_pressure_score >= 40 else "✓"
+
+st.markdown(
+    f"""
+    <div style="
+        margin:12px 0 18px 0;
+        padding:18px 20px;
+        border-radius:18px;
+        border:1px solid {community_status_colour}66;
+        border-left:8px solid {community_status_colour};
+        background:linear-gradient(135deg, rgba(6,30,51,.96), rgba(8,39,65,.92));
+        box-shadow:0 14px 34px rgba(0,0,0,.18);
+    ">
+      <div style="font-size:.72rem; text-transform:uppercase; letter-spacing:.11em; font-weight:800; color:#93c5fd;">
+        Community safeguard priority
+      </div>
+      <div style="font-size:1.25rem; font-weight:850; color:{community_status_colour}; margin:4px 0 5px 0;">
+        {community_status_icon} {community_pressure_level} · {community_pressure_score}/100
+      </div>
+      <div style="color:#dbeafe;">
+        Community impact is treated as a first-order siting constraint alongside water capacity and water stress.
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+metric1, metric2, metric3, metric4 = st.columns(4)
 metric1.metric("Normal-day demand", f"{normal_m3_day:,.0f} m³/day")
 metric2.metric("Peak scenario", f"{peak_m3_day:,.0f} m³/day")
 metric3.metric(
@@ -760,6 +930,7 @@ metric3.metric(
     if abs(difference_pct) < 0.05
     else f"{abs(difference_pct):.0f}% {'above' if difference_pct > 0 else 'below'}",
 )
+metric4.metric("Community priority", f"{community_pressure_score}/100", delta=community_pressure_level)
 
 st.subheader("What would make this site viable?")
 mitigation_actions = []
@@ -809,11 +980,11 @@ with result_tab:
     )
 
 with community_tab:
-    st.subheader("Community Water Impact Screen")
+    st.subheader("Community Safeguard Priority")
     st.write(
-        "This screen asks whether the proposed facility could intensify competition for water "
-        "shared with residents and essential services. It does not claim that the facility will "
-        "remove this amount from household supply."
+        "Community impact is treated as a core siting priority. This screen asks whether the proposed "
+        "facility could intensify competition for water shared with residents and essential services. "
+        "It does not claim that the facility will remove this amount from household supply."
     )
     community_metric1, community_metric2, community_metric3 = st.columns(3)
     community_metric1.metric("Community screening priority", f"{community_pressure_score}/100")
