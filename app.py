@@ -1105,10 +1105,16 @@ live_boundary_url = (
     "releaseData/gbOpen/SGP/ADM0/geoBoundaries-SGP-ADM0_simplified.geojson"
 )
 live_boundary_colour = (
-    "properties.shapeName === 'Kedah' ? [249,115,22,175] : "
-    "properties.shapeName === 'Perlis' ? [250,204,21,175] : [34,197,94,95]"
+    "properties.shapeName === 'Kedah' ? [239,68,68,225] : "
+    "properties.shapeName === 'Perlis' ? [249,115,22,215] : [14,116,144,72]"
     if country == "Malaysia"
     else [147, 51, 234, 115]
+)
+live_boundary_line_colour = (
+    "properties.shapeName === 'Kedah' ? [254,202,202,255] : "
+    "properties.shapeName === 'Perlis' ? [255,237,213,255] : [125,211,252,120]"
+    if country == "Malaysia"
+    else [216, 180, 254, 235]
 )
 
 live_boundary_layer = pdk.Layer(
@@ -1117,8 +1123,31 @@ live_boundary_layer = pdk.Layer(
     stroked=True,
     filled=True,
     get_fill_color=live_boundary_colour,
-    get_line_color=[186, 230, 253, 180],
-    line_width_min_pixels=1,
+    get_line_color=live_boundary_line_colour,
+    line_width_min_pixels=2,
+    pickable=False,
+)
+live_risk_labels = pd.DataFrame(
+    [
+        {"lat": 6.10, "lon": 100.52, "label": "⚠ KEDAH\nHIGH STRESS"},
+        {"lat": 6.47, "lon": 100.20, "label": "⚠ PERLIS\nMED–HIGH"},
+    ] if country == "Malaysia" else [
+        {"lat": 1.355, "lon": 103.82, "label": "SINGAPORE\nDATA GAP"},
+    ]
+)
+live_risk_label_layer = pdk.Layer(
+    "TextLayer",
+    data=live_risk_labels,
+    get_position="[lon, lat]",
+    get_text="label",
+    get_size=18 if country == "Malaysia" else 15,
+    get_color=[255, 255, 255, 255],
+    get_text_anchor="'middle'",
+    get_alignment_baseline="'center'",
+    billboard=True,
+    font_weight=900,
+    outline_width=5,
+    outline_color=[3, 20, 38, 255],
     pickable=False,
 )
 live_ring_layer = pdk.Layer(
@@ -1175,7 +1204,7 @@ live_view = pdk.ViewState(
     pitch=12,
 )
 live_deck = pdk.Deck(
-    layers=[live_boundary_layer, live_ring_layer, live_centre_layer, live_site_layer],
+    layers=[live_boundary_layer, live_risk_label_layer, live_ring_layer, live_centre_layer, live_site_layer],
     initial_view_state=live_view,
     tooltip={
         "html": "<b>{Name}</b><br/>{Type}<br/>{Layer meaning}<br/>{Country}",
@@ -1218,6 +1247,22 @@ with live_map_placeholder.container():
         delta_color="normal" if annual_water_difference >= 0 else "inverse",
     )
     st.caption(f"Evidence confidence: {evidence_confidence}% · {evidence_verified}/{evidence_total} checks verified")
+    if country == "Malaysia":
+        st.markdown(
+            "<div class='lab-card'><strong style='color:#fca5a5'>● HIGH — Kedah</strong> &nbsp; "
+            "<strong style='color:#fdba74'>● MEDIUM–HIGH — Perlis</strong> &nbsp; "
+            "<span style='color:#bae6fd'>● Other states — lower-stress regional screen</span><br>"
+            "<small>Bright colour and thick borders identify the priority water-stress areas. "
+            "Regional screening does not replace basin or utility assessment.</small></div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div class='lab-card'><strong style='color:#d8b4fe'>● PURPLE — DATA GAP</strong> &nbsp; "
+            "Singapore has no provincial Aqueduct category in the cited ranking table. "
+            "NoData must not be interpreted as no risk.</div>",
+            unsafe_allow_html=True,
+        )
     st.pydeck_chart(live_deck, width="stretch", height=410)
     st.markdown(
         '<div class="map-key">🔴 Stop / redesign &nbsp; · &nbsp; 🟠 Mitigate / verify &nbsp; · &nbsp; '
@@ -1609,35 +1654,40 @@ with map_tab:
             stroked=True,
             filled=True,
             get_fill_color=(
-                "properties.shapeName === 'Kedah' ? [249,115,22,190] : "
-                "properties.shapeName === 'Perlis' ? [250,204,21,190] : "
-                "properties.shapeName === 'Johor' ? [34,197,94,160] : "
-                "properties.shapeName === 'Selangor' ? [34,197,94,160] : "
-                "properties.shapeName === 'Kuala Lumpur' ? [34,197,94,160] : [34,197,94,115]"
+                "properties.shapeName === 'Kedah' ? [239,68,68,235] : "
+                "properties.shapeName === 'Perlis' ? [249,115,22,225] : "
+                "properties.shapeName === 'Johor' ? [14,116,144,105] : "
+                "properties.shapeName === 'Selangor' ? [14,116,144,105] : "
+                "properties.shapeName === 'Kuala Lumpur' ? [14,116,144,105] : [30,64,90,70]"
             ),
-            get_line_color=[186, 230, 253, 210],
-            line_width_min_pixels=1,
+            get_line_color=(
+                "properties.shapeName === 'Kedah' ? [254,202,202,255] : "
+                "properties.shapeName === 'Perlis' ? [255,237,213,255] : [125,211,252,115]"
+            ),
+            line_width_min_pixels=2,
             pickable=False,
         )
         risk_label_data = pd.DataFrame([
-            {"lat": 6.10, "lon": 100.52, "label": "KEDAH · HIGH"},
-            {"lat": 6.47, "lon": 100.20, "label": "PERLIS · MED-HIGH"},
-            {"lat": 3.35, "lon": 101.38, "label": "SELANGOR · LOW"},
-            {"lat": 3.14, "lon": 101.69, "label": "KUALA LUMPUR · LOW"},
-            {"lat": 2.05, "lon": 103.35, "label": "JOHOR · LOW"},
-            {"lat": 3.10, "lon": 113.15, "label": "SARAWAK · LOW"},
-            {"lat": 5.45, "lon": 117.05, "label": "SABAH · LOW"},
+            {"lat": 6.10, "lon": 100.52, "label": "⚠ KEDAH\nHIGH STRESS", "priority": 1},
+            {"lat": 6.47, "lon": 100.20, "label": "⚠ PERLIS\nMED–HIGH", "priority": 1},
+            {"lat": 3.35, "lon": 101.38, "label": "SELANGOR", "priority": 0},
+            {"lat": 3.14, "lon": 101.69, "label": "KUALA LUMPUR", "priority": 0},
+            {"lat": 2.05, "lon": 103.35, "label": "JOHOR", "priority": 0},
+            {"lat": 3.10, "lon": 113.15, "label": "SARAWAK", "priority": 0},
+            {"lat": 5.45, "lon": 117.05, "label": "SABAH", "priority": 0},
         ])
         risk_label_layer = pdk.Layer(
             "TextLayer",
             data=risk_label_data,
             get_position="[lon, lat]",
             get_text="label",
-            get_size=16,
-            get_color=[255,255,255,255],
+            get_size="priority === 1 ? 20 : 13",
+            get_color="priority === 1 ? [255,255,255,255] : [186,230,253,205]",
             get_text_anchor="'middle'",
             get_alignment_baseline="'center'",
             billboard=True,
+            outline_width=5,
+            outline_color=[3,20,38,255],
             pickable=False,
         )
     else:
@@ -1726,9 +1776,9 @@ with map_tab:
     st.pydeck_chart(deck, width="stretch", height=540)
 
     legend1, legend2, legend3, legend4, legend5 = st.columns(5)
-    legend1.markdown("🟢 **Low**")
-    legend2.markdown("🟡 **Medium-high**")
-    legend3.markdown("🟠 **High**")
+    legend1.markdown("🔵 **Lower-stress screen**")
+    legend2.markdown("🟠 **Medium-high**")
+    legend3.markdown("🔴 **High**")
     legend4.markdown("🟣 **NoData**")
     legend5.markdown("🟡 **Existing centre** · 🔵 **Proposed site**")
 
