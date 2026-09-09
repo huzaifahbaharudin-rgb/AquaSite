@@ -781,6 +781,189 @@ def compare_candidate(country_name, location_name, capacity_mw, wue, peak_factor
         "_stress": stress_category if stress_category >= 0 else 1,
     }
 
+def render_three_screen_journey():
+    """Judge-ready AquaSite journey: decide, understand, document."""
+    defaults = {
+        "aq_country": "Singapore", "aq_location": "Jurong demonstration zone",
+        "aq_capacity": 20.0, "aq_wue": 1.6, "aq_cooling": "Hybrid cooling",
+        "aq_source": "Recycled or reclaimed water", "aq_peak": 1.10,
+        "aq_headroom": "Unknown", "aq_cumulative": "Unknown", "aq_safeguard": "Unknown",
+        "aq_population": 100000, "aq_dependence": "Unknown", "aq_receptors": [],
+        "aq_consultation": "Not started",
+    }
+    for key, value in defaults.items():
+        st.session_state.setdefault(key, value)
+
+    st.title("💧 AquaSite")
+    st.markdown(
+        "<div class='hero-card'><div class='eyebrow'>Pre-development water safeguard screening</div>"
+        "<h3>Where—and under what conditions—should this data centre proceed?</h3>"
+        "<p>Compare candidate areas, redesign water demand and protect communities before decisions are locked in.</p></div>",
+        unsafe_allow_html=True,
+    )
+    screen = st.radio(
+        "AquaSite journey",
+        ["1  Command Centre", "2  Community & Evidence", "3  Decision Brief"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="aq_screen",
+    )
+
+    country = st.session_state.aq_country
+    valid_locations = list(COUNTRIES[country]["locations"])
+    if st.session_state.aq_location not in valid_locations:
+        st.session_state.aq_location = valid_locations[0]
+    location = st.session_state.aq_location
+    country_data = COUNTRIES[country]
+    location_data = country_data["locations"][location]
+    location_display = LOCATION_LABELS.get(location, location)
+    stress_label, stress_category = location_data[2], location_data[3]
+    capacity = st.session_state.aq_capacity
+    wue = st.session_state.aq_wue
+    peak_factor = st.session_state.aq_peak
+    source = st.session_state.aq_source
+    cooling = st.session_state.aq_cooling
+    headroom = st.session_state.aq_headroom
+    cumulative = st.session_state.aq_cumulative
+    safeguard = st.session_state.aq_safeguard
+    population = st.session_state.aq_population
+    dependence = st.session_state.aq_dependence
+    receptors = st.session_state.aq_receptors
+    consultation = st.session_state.aq_consultation
+
+    normal, peak, annual = calculate_demand(capacity, wue, peak_factor)
+    benchmark_annual = capacity * 8760 * country_data["benchmark"]
+    annual_difference = benchmark_annual - annual
+    score_parts = {
+        "Potable-water reliance": 25 if source == "Potable water" else 10 if source == "Mixed supply" else 0,
+        "Utility headroom": 25 if headroom == "Not adequate" else 15 if headroom == "Unknown" else 0,
+        "Regional stress / missing coverage": 20 if stress_category >= 3 else 12 if stress_category == 2 else 8 if stress_category == -1 else 0,
+        "Cumulative demand gap": 12 if cumulative != "Assessed" else 0,
+        "Sensitive users": min(10, len(receptors) * 2),
+        "Engagement gap": 8 if consultation == "Not started" else 4 if consultation == "Planned" else 0,
+    }
+    community_score = min(100, sum(score_parts.values()))
+    gaps = []
+    if headroom != "Confirmed": gaps.append("Verified utility headroom")
+    if cumulative != "Assessed": gaps.append("Cumulative-demand assessment")
+    if safeguard != "No known trigger": gaps.append("Community/ecological safeguard clearance")
+    if stress_label == "NoData": gaps.append("Local water-stress evidence")
+    if dependence == "Unknown": gaps.append("Shared-system community dependence")
+    if consultation != "Completed and documented": gaps.append("Documented community engagement")
+    if safeguard == "Triggered" or headroom == "Not adequate" or community_score >= 70 or (stress_category >= 3 and source in ["Potable water", "Mixed supply"]):
+        signal, decision = "RED", "STOP — redesign or reconsider the site"
+    elif gaps or community_score >= 40 or (wue > country_data["benchmark"] and source == "Potable water"):
+        signal, decision = "AMBER", "MITIGATE — resolve safeguards before proceeding"
+    else:
+        signal, decision = "GREEN", "PROCEED — with verified conditions"
+    signal_rgb = {"RED": [239,68,68,245], "AMBER": [245,158,11,245], "GREEN": [34,197,94,245]}[signal]
+    icon = {"RED": "🚨", "AMBER": "⚠️", "GREEN": "✓"}[signal]
+    evidence_total = 6
+    evidence_verified = evidence_total - len(gaps)
+    confidence = round(max(0, evidence_verified) / evidence_total * 100)
+
+    if screen == "1  Command Centre":
+        control_col, map_col = st.columns([.82, 1.55], gap="large")
+        with control_col:
+            st.subheader("Design levers")
+            st.selectbox("Country", list(COUNTRIES), key="aq_country")
+            current_country = st.session_state.aq_country
+            current_locations = list(COUNTRIES[current_country]["locations"])
+            if st.session_state.aq_location not in current_locations:
+                st.session_state.aq_location = current_locations[0]
+            st.selectbox("Candidate area", current_locations, format_func=lambda x: LOCATION_LABELS.get(x, x), key="aq_location")
+            st.number_input("IT capacity (MW)", 1.0, 500.0, step=1.0, key="aq_capacity")
+            st.number_input("WUE (m³/MWh)", 0.0, 10.0, step=.1, key="aq_wue")
+            st.selectbox("Cooling", ["Hybrid cooling", "Air cooling", "Liquid cooling", "Evaporative cooling", "Unknown"], key="aq_cooling")
+            st.selectbox("Water source", ["Recycled or reclaimed water", "Closed-loop system", "Mixed supply", "Potable water", "Unknown"], key="aq_source")
+            st.slider("Peak-demand factor", 1.0, 1.5, step=.05, key="aq_peak")
+        with map_col:
+            st.markdown(f"<div class='command-card signal-{signal.lower()}'><div class='eyebrow'>Live decision</div><h3>{icon} {signal} · {location_display}</h3><p>{decision}</p></div>", unsafe_allow_html=True)
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Verdict", signal)
+            m2.metric("Peak demand", f"{peak:,.0f} m³/day")
+            m3.metric("Community", f"{community_score}/100")
+            m4.metric("Annual water", f"{abs(annual_difference):,.0f} m³", delta="saved" if annual_difference >= 0 else "added", delta_color="normal" if annual_difference >= 0 else "inverse")
+            boundary_url = ("https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/MYS/ADM1/geoBoundaries-MYS-ADM1_simplified.geojson" if country == "Malaysia" else "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SGP/ADM0/geoBoundaries-SGP-ADM0_simplified.geojson")
+            fill = ("properties.shapeName === 'Kedah' ? [239,68,68,235] : properties.shapeName === 'Perlis' ? [249,115,22,225] : [14,116,144,72]" if country == "Malaysia" else [147,51,234,125])
+            labels = pd.DataFrame(([{"lat":6.10,"lon":100.52,"label":"⚠ KEDAH\nHIGH"},{"lat":6.47,"lon":100.20,"label":"⚠ PERLIS\nMED–HIGH"}] if country == "Malaysia" else [{"lat":1.355,"lon":103.82,"label":"SINGAPORE\nDATA GAP"}]))
+            site = pd.DataFrame([{"lat":location_data[0],"lon":location_data[1],"Name":location_display,"Status":decision}])
+            layers = [
+                pdk.Layer("GeoJsonLayer", data=boundary_url, filled=True, stroked=True, get_fill_color=fill, get_line_color=[186,230,253,190], line_width_min_pixels=2),
+                pdk.Layer("TextLayer", data=labels, get_position="[lon,lat]", get_text="label", get_size=18, get_color=[255,255,255,255], get_text_anchor="'middle'", outline_width=5, outline_color=[3,20,38,255]),
+                pdk.Layer("ScatterplotLayer", data=site, get_position="[lon,lat]", get_radius=max(5000,min(28000,peak*3.2)), get_fill_color=[*signal_rgb[:3],55], get_line_color=signal_rgb, stroked=True, line_width_min_pixels=3),
+                pdk.Layer("ScatterplotLayer", data=site, get_position="[lon,lat]", get_radius=2200, radius_min_pixels=10, get_fill_color=signal_rgb, get_line_color=[255,255,255,255], stroked=True, pickable=True),
+            ]
+            view = pdk.ViewState(latitude=1.36 if country=="Singapore" else 4.15, longitude=103.82 if country=="Singapore" else 101.75, zoom=9 if country=="Singapore" else 5.45, pitch=10)
+            st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view, map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json", tooltip={"html":"<b>{Name}</b><br>{Status}"}), height=485, width="stretch")
+            st.caption("🔴 High: Kedah · 🟠 Medium–high: Perlis · 🟣 NoData: Singapore · Regional screening is not local utility approval.")
+
+        st.subheader("Decision Lab")
+        compare_tab, optimise_tab = st.tabs(["⚖️ Compare sites", "✨ Find a safer configuration"])
+        current_stress_points = score_parts["Regional stress / missing coverage"]
+        lookup = {LOCATION_LABELS.get(loc,loc):(ctry,loc) for ctry,data in COUNTRIES.items() for loc in data["locations"]}
+        with compare_tab:
+            picks = st.multiselect("Candidate shortlist", list(lookup), default=list(dict.fromkeys([location_display,"Johor Bahru, Malaysia","Kedah, Malaysia"])), max_selections=4, key="aq_shortlist")
+            rows = [compare_candidate(*lookup[p], capacity, wue, peak_factor, source, headroom, cumulative, safeguard, community_score, current_stress_points) for p in picks]
+            if rows:
+                ranked = sorted(rows,key=lambda r:(r["_rank"],r["_stress"],r["Community index"]))
+                frame = pd.DataFrame(rows); frame["Peak demand"] = frame["Peak demand"].map(lambda v:f"{v:,.0f} m³/day"); frame["Community index"] = frame["Community index"].map(lambda v:f"{v}/100")
+                st.dataframe(frame[["Candidate","Water stress","Peak demand","Community index","Verdict"]], hide_index=True, width="stretch")
+                st.info(f"Lowest preliminary pressure: **{ranked[0]['Candidate']}** ({ranked[0]['Verdict']}). Local headroom still requires verification.")
+        with optimise_tab:
+            if st.button("✨ Find a safer configuration", type="primary", width="stretch"):
+                st.session_state.aq_optimised = True
+            if st.session_state.get("aq_optimised"):
+                rec_wue = max(.8,min(1.4,country_data["benchmark"]-.4)); _,rec_peak,rec_annual=calculate_demand(capacity,rec_wue,min(peak_factor,1.10))
+                st.success(f"Test Johor Bahru · hybrid cooling · reclaimed water · WUE {rec_wue:.1f}. Unknown evidence remains unresolved.")
+                a,b,c=st.columns(3); a.metric("Pathway",f"{signal} → AMBER"); b.metric("Peak demand",f"{rec_peak:,.0f} m³/day",delta=f"{rec_peak-peak:,.0f}"); c.metric("Annual reduction",f"{max(0,annual-rec_annual):,.0f} m³")
+
+    elif screen == "2  Community & Evidence":
+        st.header("Community & Evidence")
+        st.caption("Document what is known. Unknown information remains a decision constraint, never a safety assumption.")
+        e1,e2,e3=st.columns(3)
+        with e1: st.selectbox("Local water-system headroom",["Unknown","Confirmed","Not adequate"],key="aq_headroom")
+        with e2: st.selectbox("Nearby cumulative demand",["Unknown","Assessed","Not assessed"],key="aq_cumulative")
+        with e3: st.selectbox("Community/ecological safeguard",["Unknown","No known trigger","Triggered"],key="aq_safeguard")
+        c1,c2=st.columns(2)
+        with c1:
+            st.number_input("Population sharing the water system",1000,5000000,step=10000,key="aq_population")
+            st.selectbox("Dependence on shared potable supply",["Unknown","High","Moderate","Low"],key="aq_dependence")
+        with c2:
+            st.multiselect("Water-sensitive users nearby",["Hospitals","Schools","Public housing","Small businesses","Water-dependent livelihoods"],key="aq_receptors")
+            st.selectbox("Community engagement",["Not started","Planned","In progress","Completed and documented"],key="aq_consultation")
+        st.markdown(f"<div class='command-card signal-{signal.lower()}'><div class='eyebrow'>Community Water Pressure Screening Index</div><h3>{community_score}/100 · {'High priority' if community_score>=70 else 'Needs safeguards' if community_score>=40 else 'Lower concern'}</h3><p>Transparent screening prompt—not a measured social-impact or health score.</p></div>",unsafe_allow_html=True)
+        left,right=st.columns([1,1])
+        with left:
+            st.subheader("Why this score?")
+            for label,points in score_parts.items(): st.write(f"- {label}: **+{points}**")
+            st.caption("Initial weights will be calibrated through stakeholder testing.")
+        with right:
+            st.subheader("Evidence checklist")
+            for item in ["Verified utility headroom","Cumulative-demand assessment","Community/ecological safeguard clearance","Local water-stress evidence","Shared-system community dependence","Documented community engagement"]:
+                st.write(f"{'✅' if item not in gaps else '⬜'} {item}")
+        st.warning("Approval remains blocked or conditional until every critical evidence gap is resolved.") if gaps else st.success("Core screening evidence is complete; formal technical and regulatory review is still required.")
+
+    else:
+        st.header("Decision Brief")
+        st.markdown(f"<div class='command-card signal-{signal.lower()}'><div class='eyebrow'>Preliminary recommendation</div><h3>{icon} {signal} · {location_display}</h3><p>{decision}</p></div>",unsafe_allow_html=True)
+        b1,b2,b3,b4=st.columns(4); b1.metric("Normal demand",f"{normal:,.0f} m³/day"); b2.metric("Peak demand",f"{peak:,.0f} m³/day"); b3.metric("Community",f"{community_score}/100"); b4.metric("Evidence",f"{confidence}%")
+        st.subheader("Water Capacity Impact Statement")
+        st.write(f"A proposed **{capacity:.0f} MW** data centre in **{location_display}** is modelled at **{normal:,.0f} m³/day** normally and **{peak:,.0f} m³/day** at peak. The design uses **{cooling.lower()}**, **{source.lower()}** and WUE **{wue:.1f} m³/MWh**. AquaSite's preliminary outcome is **{signal}**.")
+        st.subheader("Conditions to unlock")
+        for item in gaps or ["Maintain monitoring, disclosure and formal validation."]: st.write(f"- {item}")
+        brief=f"""# AquaSite Decision Brief\n\n**Candidate:** {location_display}\n**Verdict:** {signal} — {decision}\n\n## Demand\n- Normal: {normal:,.0f} m³/day\n- Peak: {peak:,.0f} m³/day\n- Annual: {annual:,.0f} m³/year\n\n## Community and evidence\n- Community index: {community_score}/100\n- Evidence confidence: {confidence}%\n- Water-stress signal: {stress_label}\n\n## Conditions\n{chr(10).join('- '+x for x in gaps) if gaps else '- Maintain monitoring and formal validation.'}\n\nDemonstration screening only; not regulatory approval or proof of utility capacity.\n"""
+        st.download_button("⬇️ Download decision brief",brief,file_name="AquaSite_decision_brief.md",mime="text/markdown",width="stretch")
+        with st.expander("Audit trail · method, assumptions and sources",expanded=False):
+            st.write("**Demand method:** IT capacity × 24 × WUE; peak demand applies the selected peak factor.")
+            st.write("**Community method:** disclosed additive screening weights. These require stakeholder calibration and are not measured health or social impacts.")
+            st.write("**Limitations:** direct operational water only; demonstration locations; public regional stress screening; unknown local utility headroom; no regulatory approval.")
+            st.markdown("**Sources:** [Singapore Green Data Centre Roadmap](https://www.imda.gov.sg/-/media/imda/files/news-and-events/media-room/media-releases/2024/05/green-dc-roadmap.pdf) · [Malaysia Data Centre Planning Guideline](https://jpbd.penang.gov.my/images/faris/pdf/2025/GARIS%20PANDUAN/GPP%20PUSAT%20DATA%20-%20ENG.pdf) · [WRI Aqueduct 4.0](https://www.wri.org/data/aqueduct-40-country-rankings) · [geoBoundaries](https://www.geoboundaries.org/)")
+    st.caption("AquaSite prototype — demonstration purposes only.")
+
+render_three_screen_journey()
+st.stop()
+
 # -----------------------------
 # Hero / site controls
 # -----------------------------
