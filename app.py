@@ -8,27 +8,58 @@ st.set_page_config(page_title="AquaSite", page_icon="💧", layout="wide")
 st.markdown(
     """
     <style>
-    .stApp { background: linear-gradient(145deg, #effcf9 0%, #f7fbff 52%, #fff8e8 100%); }
-    [data-testid="stHeader"] { background: rgba(239,252,249,.88); }
-    h1 { color: #0f766e !important; font-size: 3rem !important; }
-    h2, h3 { color: #164e63 !important; }
+    .stApp {
+        background:
+          radial-gradient(circle at 85% 8%, rgba(14,165,233,.18), transparent 28%),
+          linear-gradient(145deg, #031426 0%, #08233d 52%, #0b3152 100%);
+        color: #e6f4ff;
+    }
+    [data-testid="stHeader"] { background: rgba(3,20,38,.88); }
+    [data-testid="stToolbar"] { color: #dbeafe !important; }
+    h1 { color: #7dd3fc !important; font-size: 3rem !important; }
+    h2, h3 { color: #bae6fd !important; }
+    p, label, li, .stMarkdown, [data-testid="stCaptionContainer"] {
+        color: #dbeafe !important;
+    }
+    a { color: #38bdf8 !important; }
+    [data-baseweb="tab"] { color: #bfdbfe !important; }
+    [aria-selected="true"][data-baseweb="tab"] {
+        color: #38bdf8 !important; border-bottom-color: #38bdf8 !important;
+    }
+    [data-testid="stWidgetLabel"] p { color: #e0f2fe !important; font-weight: 650; }
+    [data-testid="stRadio"] label p { color: #e0f2fe !important; }
+    [data-baseweb="select"] > div,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stExpander"] details {
+        background: #0b2945 !important; color: #f0f9ff !important;
+        border-color: #1d4f73 !important;
+    }
+    [data-testid="stExpander"] summary { color: #e0f2fe !important; }
     div[data-testid="stMetric"] {
-        background: rgba(255,255,255,.94); border: 1px solid #b7e4dc;
+        background: linear-gradient(145deg, rgba(12,49,82,.98), rgba(8,35,61,.98));
+        border: 1px solid #2474a6;
         border-radius: 16px; padding: 16px;
-        box-shadow: 0 8px 20px rgba(15,118,110,.09);
+        box-shadow: 0 10px 28px rgba(0,0,0,.24);
+    }
+    div[data-testid="stMetric"] label,
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: #f0f9ff !important;
     }
     div[data-testid="stAlert"] { border-radius: 14px; }
+    div[data-testid="stAlert"] p { color: inherit !important; }
     .mission-card {
         padding: 18px 22px; border-radius: 18px;
-        background: linear-gradient(120deg, #0f766e, #0891b2); color: white;
-        box-shadow: 0 12px 28px rgba(15,118,110,.20); margin: 8px 0 18px 0;
+        background: linear-gradient(120deg, #075985, #0369a1, #0284c7); color: white;
+        box-shadow: 0 14px 32px rgba(2,132,199,.24); margin: 8px 0 18px 0;
     }
     .mission-card h3 { color: white !important; margin: 0 0 5px 0; }
     .mission-card p { margin: 0; font-size: 1.02rem; }
     .map-key {
-        background: white; border-left: 6px solid #7c3aed; padding: 12px 16px;
-        border-radius: 10px; color: #334155; margin: 8px 0;
+        background: #0b2945; border-left: 6px solid #38bdf8; padding: 12px 16px;
+        border-radius: 10px; color: #e0f2fe; margin: 8px 0;
     }
+    [data-testid="stDataFrame"] { border: 1px solid #1d4f73; border-radius: 12px; }
+    hr { border-color: #1d4f73 !important; }
     </style>
     """,
     unsafe_allow_html=True,
