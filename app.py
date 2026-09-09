@@ -362,8 +362,49 @@ else:
     explanation = "The proposal passes this first screen, subject to formal verification."
     decision_type = "success"
 
+# Turn the full interface into an immediate decision signal.
+if decision_type == "error" or community_pressure_score >= 70:
+    page_signal = "RED"
+    signal_title = "Do not proceed without redesign"
+    signal_explanation = "A binding safeguard, capacity failure or high-priority community concern is present."
+    page_background = "radial-gradient(circle at 85% 8%, rgba(239,68,68,.28), transparent 30%), linear-gradient(145deg, #21070b 0%, #451018 52%, #67151d 100%)"
+    signal_colour = "#fca5a5"
+elif decision_type == "warning" or community_pressure_score >= 40:
+    page_signal = "AMBER"
+    signal_title = "Pause and resolve the evidence gaps"
+    signal_explanation = "The site may be viable, but water and community safeguards are not yet demonstrated."
+    page_background = "radial-gradient(circle at 85% 8%, rgba(245,158,11,.25), transparent 30%), linear-gradient(145deg, #211303 0%, #3f2608 52%, #55340a 100%)"
+    signal_colour = "#fcd34d"
+else:
+    page_signal = "GREEN"
+    signal_title = "Proceed with verified conditions"
+    signal_explanation = "This first screen shows lower concern, subject to formal validation and monitoring."
+    page_background = "radial-gradient(circle at 85% 8%, rgba(34,197,94,.22), transparent 30%), linear-gradient(145deg, #031b16 0%, #073b2b 52%, #07533a 100%)"
+    signal_colour = "#86efac"
+
+st.markdown(
+    f"""
+    <style>
+    .stApp {{ background: {page_background} !important; }}
+    .decision-signal {{
+        border: 2px solid {signal_colour}; border-radius: 18px; padding: 18px 22px;
+        background: rgba(3, 12, 24, .72); box-shadow: 0 12px 30px rgba(0,0,0,.25);
+        margin: 6px 0 18px 0;
+    }}
+    .decision-signal strong {{ color: {signal_colour}; font-size: 1.25rem; }}
+    .decision-signal span {{ color: #f8fafc; }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.divider()
 st.header("Screening result")
+st.markdown(
+    f'<div class="decision-signal"><strong>{page_signal}: {signal_title}</strong><br>'
+    f'<span>{signal_explanation}</span></div>',
+    unsafe_allow_html=True,
+)
 message = f"**{decision}**\n\n{explanation}"
 if decision_type == "error":
     st.error(message)
@@ -588,12 +629,26 @@ with map_tab:
             ),
             get_line_color=[186, 230, 253, 210],
             line_width_min_pixels=1,
-            pickable=True,
+            pickable=False,
         )
         risk_label_data = pd.DataFrame(
             [
                 {"lat": 6.10, "lon": 100.52, "label": "KEDAH · HIGH"},
-                {"lat": 6.46, "lon": 100.20, "label": "PERLIS · MEDIUM-HIGH"},
+                {"lat": 6.47, "lon": 100.20, "label": "PERLIS · MED-HIGH"},
+                {"lat": 5.35, "lon": 100.46, "label": "PENANG · LOW"},
+                {"lat": 4.72, "lon": 101.05, "label": "PERAK · LOW"},
+                {"lat": 5.35, "lon": 102.05, "label": "KELANTAN · LOW"},
+                {"lat": 5.05, "lon": 103.02, "label": "TERENGGANU · LOW"},
+                {"lat": 3.85, "lon": 102.35, "label": "PAHANG · LOW"},
+                {"lat": 3.35, "lon": 101.38, "label": "SELANGOR · LOW"},
+                {"lat": 3.14, "lon": 101.69, "label": "KUALA LUMPUR · LOW"},
+                {"lat": 2.92, "lon": 101.70, "label": "PUTRAJAYA · LOW"},
+                {"lat": 2.75, "lon": 102.22, "label": "NEGERI SEMBILAN · LOW"},
+                {"lat": 2.25, "lon": 102.25, "label": "MELAKA · LOW"},
+                {"lat": 2.05, "lon": 103.35, "label": "JOHOR · LOW"},
+                {"lat": 3.10, "lon": 113.15, "label": "SARAWAK · LOW"},
+                {"lat": 5.45, "lon": 117.05, "label": "SABAH · LOW"},
+                {"lat": 5.30, "lon": 115.23, "label": "LABUAN · LOW"},
             ]
         )
         risk_label_layer = pdk.Layer(
@@ -619,7 +674,7 @@ with map_tab:
             get_fill_color=[147, 51, 234, 150],
             get_line_color=[216, 180, 254, 235],
             line_width_min_pixels=2,
-            pickable=True,
+            pickable=False,
         )
 
     scope = st.radio(
@@ -690,7 +745,7 @@ with map_tab:
         layers=active_layers,
         initial_view_state=view_state,
         tooltip={
-            "html": "<b>{Name}{properties.shapeName}</b><br/>{Type}<br/>{Layer meaning}<br/>{Country}",
+            "html": "<b>{Name}</b><br/>{Type}<br/>{Layer meaning}<br/>{Country}",
             "style": {"backgroundColor": "#102A43", "color": "white"},
         },
         map_style="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
