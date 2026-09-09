@@ -237,7 +237,7 @@ st.markdown(
     }
     .block-container {
         max-width: 1380px;
-        padding-top: 2.2rem;
+        padding-top: 1.15rem;
         padding-bottom: 4rem;
         padding-left: 2.4rem;
         padding-right: 2.4rem;
@@ -283,7 +283,7 @@ st.markdown(
     .hero-card {
         position: relative;
         overflow: hidden;
-        padding: 30px 34px;
+        padding: 18px 24px;
         border-radius: 24px;
         background:
           radial-gradient(circle at 90% 10%, rgba(56,189,248,.20), transparent 30%),
@@ -310,13 +310,13 @@ st.markdown(
         margin-bottom: 7px;
     }
     .hero-card h3 {
-        font-size: 1.95rem !important;
-        margin: 0 0 .55rem 0 !important;
+        font-size: 1.65rem !important;
+        margin: 0 0 .3rem 0 !important;
         color: #f0f9ff !important;
     }
     .hero-card p {
         max-width: 920px;
-        font-size: 1.06rem !important;
+        font-size: .98rem !important;
         color: #cfeeff !important;
         margin: 0 !important;
     }
@@ -522,6 +522,15 @@ st.markdown(
         color: #cbd5e1;
         font-size: .88rem;
     }
+    .lab-card {
+        padding: 18px 20px;
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(8,47,73,.92), rgba(5,28,49,.97));
+        border: 1px solid rgba(56,189,248,.22);
+        box-shadow: 0 14px 34px rgba(0,0,0,.18);
+        margin: 8px 0 14px 0;
+    }
+    .lab-card strong { color: #7dd3fc; }
 
     /* Safeguard alarm states */
     @keyframes aquasitePulseRed {
@@ -725,6 +734,52 @@ def distance_km(lat1, lon1, lat2, lon2):
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     return 2 * earth_radius_km * asin(sqrt(a))
+
+LOCATION_LABELS = {
+    "Jurong demonstration zone": "Jurong, Singapore",
+    "Changi demonstration zone": "Changi, Singapore",
+    "Woodlands demonstration zone": "Woodlands, Singapore",
+    "Tuas demonstration zone": "Tuas, Singapore",
+    "Johor Bahru demonstration zone": "Johor Bahru, Malaysia",
+    "Iskandar Puteri demonstration zone": "Iskandar Puteri, Malaysia",
+    "Cyberjaya demonstration zone": "Cyberjaya, Malaysia",
+    "Kuala Lumpur demonstration zone": "Kuala Lumpur, Malaysia",
+    "Kedah stress-test zone": "Kedah, Malaysia",
+    "Perlis stress-test zone": "Perlis, Malaysia",
+}
+
+def compare_candidate(country_name, location_name, capacity_mw, wue, peak_factor,
+                      water_source, headroom_status, cumulative_status,
+                      safeguard_status, base_community_score, current_stress_points):
+    """Apply the same transparent screen to every candidate while holding design constant."""
+    location_data = COUNTRIES[country_name]["locations"][location_name]
+    stress_label, stress_category = location_data[2], location_data[3]
+    stress_points = 20 if stress_category >= 3 else 12 if stress_category == 2 else 8 if stress_category == -1 else 0
+    community_score = min(100, max(0, base_community_score - current_stress_points + stress_points))
+    normal, peak, annual = calculate_demand(capacity_mw, wue, peak_factor)
+    benchmark = COUNTRIES[country_name]["benchmark"]
+    if safeguard_status == "Triggered" or headroom_status == "Not adequate":
+        verdict = "RED"
+    elif (stress_category >= 3 and water_source in ["Potable water", "Mixed supply"]) or community_score >= 70:
+        verdict = "RED"
+    elif (headroom_status != "Confirmed" or cumulative_status != "Assessed" or
+          stress_label == "NoData" or stress_category >= 2 or community_score >= 40 or
+          (wue > benchmark and water_source == "Potable water")):
+        verdict = "AMBER"
+    else:
+        verdict = "GREEN"
+    order = {"GREEN": 0, "AMBER": 1, "RED": 2}
+    return {
+        "Candidate": LOCATION_LABELS.get(location_name, location_name),
+        "Country": country_name,
+        "Water stress": stress_label,
+        "Peak demand": peak,
+        "Annual demand": annual,
+        "Community index": community_score,
+        "Verdict": verdict,
+        "_rank": order[verdict],
+        "_stress": stress_category if stress_category >= 0 else 1,
+    }
 
 # -----------------------------
 # Hero / site controls
@@ -1155,14 +1210,109 @@ with live_map_placeholder.container():
             """,
             unsafe_allow_html=True,
         )
-    live_metric4.metric("Evidence confidence", f"{evidence_confidence}%", delta=f"{evidence_verified}/{evidence_total} verified")
-    st.pydeck_chart(live_deck, width="stretch", height=460)
+    water_delta_label = "saved" if annual_water_difference >= 0 else "added"
+    live_metric4.metric(
+        f"Annual water {water_delta_label}",
+        f"{abs(annual_water_difference):,.0f} m³",
+        delta=f"vs {country_data['benchmark']:.1f} m³/MWh",
+        delta_color="normal" if annual_water_difference >= 0 else "inverse",
+    )
+    st.caption(f"Evidence confidence: {evidence_confidence}% · {evidence_verified}/{evidence_total} checks verified")
+    st.pydeck_chart(live_deck, width="stretch", height=410)
     st.markdown(
         '<div class="map-key">🔴 Stop / redesign &nbsp; · &nbsp; 🟠 Mitigate / verify &nbsp; · &nbsp; '
         '🟢 Proceed conditionally &nbsp; · &nbsp; 🟡 Existing data centre<br>'
         '<b>Live response:</b> marker colour follows the decision; halo size grows with peak water demand.</div>',
         unsafe_allow_html=True,
     )
+
+# -----------------------------
+# Winning-build decision lab
+# -----------------------------
+st.header("Decision Lab")
+st.caption("Hold the facility design constant, compare candidate areas, then test a lower-water configuration.")
+
+all_candidates = [
+    (country_name, location_name)
+    for country_name, details in COUNTRIES.items()
+    for location_name in details["locations"]
+]
+candidate_lookup = {
+    LOCATION_LABELS.get(location_name, location_name): (country_name, location_name)
+    for country_name, location_name in all_candidates
+}
+default_candidates = list(dict.fromkeys([
+    location_display,
+    "Johor Bahru, Malaysia",
+    "Kedah, Malaysia",
+]))
+
+compare_tab, optimise_tab = st.tabs(["⚖️ Compare sites", "✨ Find a safer configuration"])
+with compare_tab:
+    selected_candidate_labels = st.multiselect(
+        "Candidate shortlist",
+        list(candidate_lookup),
+        default=[item for item in default_candidates if item in candidate_lookup],
+        max_selections=4,
+        help="A fair comparison holds capacity, WUE, cooling, water source and evidence assumptions constant.",
+    )
+    comparison_rows = []
+    current_stress_points = community_score_components["Regional water stress / missing coverage"]
+    for candidate_label in selected_candidate_labels:
+        candidate_country, candidate_location = candidate_lookup[candidate_label]
+        comparison_rows.append(compare_candidate(
+            candidate_country, candidate_location, capacity_mw, wue, peak_factor,
+            water_source, headroom_status, cumulative_status, safeguard_status,
+            community_pressure_score, current_stress_points,
+        ))
+    if comparison_rows:
+        ranked_rows = sorted(comparison_rows, key=lambda row: (row["_rank"], row["_stress"], row["Community index"]))
+        best_candidate = ranked_rows[0]
+        comparison_df = pd.DataFrame(comparison_rows)
+        comparison_df["Peak demand"] = comparison_df["Peak demand"].map(lambda value: f"{value:,.0f} m³/day")
+        comparison_df["Community index"] = comparison_df["Community index"].map(lambda value: f"{value}/100")
+        st.dataframe(
+            comparison_df[["Candidate", "Water stress", "Peak demand", "Community index", "Verdict"]],
+            hide_index=True,
+            width="stretch",
+        )
+        st.markdown(
+            f"<div class='lab-card'><strong>Lowest preliminary pressure:</strong> {best_candidate['Candidate']} "
+            f"currently ranks first with a <strong>{best_candidate['Verdict']}</strong> screen. "
+            "This is a shortlist signal—not proof of local utility capacity.</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.info("Select at least one candidate to start the comparison.")
+
+with optimise_tab:
+    st.write("AquaSite tests location, cooling, source and WUE changes. Unknown evidence remains unresolved—it is never optimised away.")
+    if st.button("✨ Find a safer configuration", type="primary", width="stretch"):
+        st.session_state["show_safer_configuration"] = True
+    if st.session_state.get("show_safer_configuration", False):
+        recommended_wue = max(0.8, min(1.4, country_data["benchmark"] - 0.4))
+        safer_source = "Recycled or reclaimed water"
+        safer_cooling = "Hybrid cooling"
+        safer_normal, safer_peak, safer_annual = calculate_demand(capacity_mw, recommended_wue, min(peak_factor, 1.10))
+        annual_reduction = max(0, annual_m3 - safer_annual)
+        optimiser_rows = []
+        for candidate_country, candidate_location in all_candidates:
+            optimiser_rows.append(compare_candidate(
+                candidate_country, candidate_location, capacity_mw, recommended_wue, min(peak_factor, 1.10),
+                safer_source, headroom_status, cumulative_status, safeguard_status,
+                max(0, community_pressure_score - community_score_components["Potable-water reliance"]),
+                current_stress_points,
+            ))
+        safer_choice = sorted(optimiser_rows, key=lambda row: (row["_rank"], row["_stress"], row["Community index"]))[0]
+        st.success(
+            f"Recommended test: {safer_choice['Candidate']} · {safer_cooling} · {safer_source} · "
+            f"WUE {recommended_wue:.1f} m³/MWh · peak factor {min(peak_factor, 1.10):.2f}."
+        )
+        improvement_col1, improvement_col2, improvement_col3 = st.columns(3)
+        improvement_col1.metric("Decision pathway", f"{page_signal} → {safer_choice['Verdict']}")
+        improvement_col2.metric("Peak demand", f"{safer_peak:,.0f} m³/day", delta=f"{safer_peak - peak_m3_day:,.0f} m³/day")
+        improvement_col3.metric("Annual reduction", f"{annual_reduction:,.0f} m³")
+        st.caption("Recommendation uses transparent screening rules and illustrative public inputs. Utility and community validation remain mandatory.")
 
 # -----------------------------
 # Decision + mitigation
@@ -1261,7 +1411,7 @@ if evidence_gaps:
 # Detailed tabs
 # -----------------------------
 result_tab, community_tab, map_tab, method_tab = st.tabs(
-    ["📄 Decision summary", "👥 Community impact", "🗺️ Water-stress map", "🧪 Method and sources"]
+    ["📄 Decision brief", "👥 Community & evidence", "🗺️ Explorer", "🧪 Audit trail"]
 )
 
 with result_tab:
@@ -1276,6 +1426,45 @@ with result_tab:
     st.caption(
         f"Comparison reference: {country_data['benchmark_name']} at "
         f"{country_data['benchmark']:.1f} m³/MWh."
+    )
+    decision_brief = f"""# AquaSite Water Capacity Impact Statement
+
+## Preliminary decision
+{page_signal}: {signal_title}
+
+## Proposal
+- Candidate area: {location_display}
+- IT capacity: {capacity_mw:.0f} MW
+- Cooling: {cooling_system}
+- Primary water source: {water_source}
+- WUE: {wue:.1f} m³/MWh
+- Peak factor: {peak_factor:.2f}
+
+## Modelled water demand
+- Normal day: {normal_m3_day:,.0f} m³/day
+- Peak condition: {peak_m3_day:,.0f} m³/day
+- Annual demand: {annual_m3:,.0f} m³/year
+- Annual water {"saved" if annual_water_difference >= 0 else "added"} against comparison value: {abs(annual_water_difference):,.0f} m³/year
+
+## Community and evidence screen
+- Community Water Pressure Screening Index: {community_pressure_score}/100 ({community_pressure_level})
+- Evidence confidence: {evidence_confidence}% ({evidence_verified}/{evidence_total} checks verified)
+- Regional water-stress signal: {water_stress_label}
+
+## Conditions and outstanding evidence
+{chr(10).join(f"- {title}: {detail}" for title, detail in mitigation_actions) if mitigation_actions else "- Maintain monitoring and formal verification."}
+
+## Important limitation
+This prototype is a preliminary screening tool. It does not grant approval, prove utility headroom,
+predict household water loss or replace basin, engineering, regulatory and community assessment.
+Validation is required from the {country_data['authority']}.
+"""
+    st.download_button(
+        "⬇️ Download decision brief",
+        data=decision_brief,
+        file_name=f"AquaSite_{location_display.replace(', ', '_').replace(' ', '_')}_decision_brief.md",
+        mime="text/markdown",
+        width="stretch",
     )
 
 with community_tab:
@@ -1295,10 +1484,10 @@ with community_tab:
     )
     st.progress(community_pressure_score / 100)
 
-    with st.expander("Why did this site receive this community screening score?"):
+    with st.expander("Why this score? See every contribution", expanded=True):
         for label, points in community_score_components.items():
             st.write(f"- {label}: **+{points}**")
-        st.caption("This is a transparent screening index, not a measured social-impact or health score.")
+        st.caption("Initial weights are transparent and will be calibrated through stakeholder testing. This is not a measured social-impact or health score.")
 
     if community_pressure_score >= 70:
         st.error("🚨 High-priority review: pause siting until shared-system capacity, vulnerable users and drought protections are verified.")
