@@ -329,6 +329,8 @@ with st.expander("👥 Add community context", expanded=False):
 normal_m3_day, peak_m3_day, annual_m3 = calculate_demand(capacity_mw, wue, peak_factor)
 benchmark_peak = capacity_mw * 24 * country_data["benchmark"] * peak_factor
 difference_pct = ((peak_m3_day - benchmark_peak) / benchmark_peak * 100) if benchmark_peak else 0
+benchmark_annual_m3 = capacity_mw * 8760 * country_data["benchmark"]
+annual_water_difference = benchmark_annual_m3 - annual_m3
 community_litres_per_person = peak_m3_day * 1000 / shared_population
 
 # A transparent screening index. It prioritises conditions that could intensify
@@ -521,14 +523,32 @@ live_deck = pdk.Deck(
 )
 
 with live_map_placeholder.container():
-    st.subheader("Live site response")
-    st.caption("Move any design or community lever below—the map and decision signal update instantly.")
-    live_metric1, live_metric2, live_metric3 = st.columns(3)
+    st.markdown(
+        f"""
+        <div class="mission-card">
+          <h3>⚡ Live Site Command View · {page_signal}</h3>
+          <p>{location} · {capacity_mw:.0f} MW · Move any lever below and watch this view respond.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    live_metric1, live_metric2, live_metric3, live_metric4 = st.columns(4)
     live_metric1.metric("Live signal", page_signal)
     live_metric2.metric("Peak water demand", f"{peak_m3_day:,.0f} m³/day")
     live_metric3.metric("Community pressure", f"{community_pressure_score}/100")
+    live_metric4.metric(
+        "Annual water vs benchmark",
+        f"{abs(annual_water_difference):,.0f} m³",
+        delta="saved" if annual_water_difference >= 0 else "additional",
+        delta_color="normal" if annual_water_difference >= 0 else "inverse",
+    )
     st.pydeck_chart(live_deck, width="stretch", height=460)
-    st.caption("🔴 stop/redesign · 🟠 resolve safeguards · 🟢 proceed conditionally · 🟡 existing data centre")
+    st.markdown(
+        '<div class="map-key">🔴 Stop / redesign &nbsp; · &nbsp; 🟠 Resolve safeguards &nbsp; · &nbsp; '
+        '🟢 Proceed conditionally &nbsp; · &nbsp; 🟡 Existing data centre<br>'
+        '<b>Map response:</b> marker colour follows the decision; halo size grows with peak water demand.</div>',
+        unsafe_allow_html=True,
+    )
 
 st.divider()
 st.header("Screening result")
