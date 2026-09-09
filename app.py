@@ -275,9 +275,57 @@ with evidence_col3:
         ["No known trigger", "Unknown", "Triggered"],
     )
 
+with st.expander("👥 Add community context", expanded=False):
+    st.caption(
+        "Use the population connected to the same local water system—not the total national population. "
+        "These inputs create a screening prompt, not a social-impact assessment."
+    )
+    community_col1, community_col2 = st.columns(2)
+    with community_col1:
+        shared_population = st.number_input(
+            "Population sharing the local water system",
+            min_value=1_000,
+            max_value=5_000_000,
+            value=100_000,
+            step=10_000,
+            help="Enter a utility service-area or local planning estimate where available.",
+        )
+        water_dependence = st.selectbox(
+            "Dependence on the same potable-water supply",
+            ["Unknown", "High", "Moderate", "Low"],
+        )
+    with community_col2:
+        sensitive_receptors = st.multiselect(
+            "Water-sensitive users nearby",
+            ["Hospitals", "Schools", "Public housing", "Small businesses", "Water-dependent livelihoods"],
+            help="Select only users identified within the relevant service area.",
+        )
+        consultation_status = st.selectbox(
+            "Community engagement status",
+            ["Not started", "Planned", "In progress", "Completed and documented"],
+        )
+
 normal_m3_day, peak_m3_day, annual_m3 = calculate_demand(capacity_mw, wue, peak_factor)
 benchmark_peak = capacity_mw * 24 * country_data["benchmark"] * peak_factor
 difference_pct = ((peak_m3_day - benchmark_peak) / benchmark_peak * 100) if benchmark_peak else 0
+community_litres_per_person = peak_m3_day * 1000 / shared_population
+
+# A transparent screening index. It prioritises conditions that could intensify
+# competition for shared water; it is not a measured health or welfare impact.
+community_pressure_score = 0
+community_pressure_score += 25 if water_source == "Potable water" else 10 if water_source == "Mixed supply" else 0
+community_pressure_score += 25 if headroom_status == "Not adequate" else 15 if headroom_status == "Unknown" else 0
+community_pressure_score += 20 if water_stress_category >= 3 else 12 if water_stress_category == 2 else 8 if water_stress_category == -1 else 0
+community_pressure_score += 12 if cumulative_status != "Assessed" else 0
+community_pressure_score += min(10, len(sensitive_receptors) * 2)
+community_pressure_score += 8 if consultation_status == "Not started" else 4 if consultation_status == "Planned" else 0
+community_pressure_score = min(100, community_pressure_score)
+if community_pressure_score >= 70:
+    community_pressure_level = "High priority"
+elif community_pressure_score >= 40:
+    community_pressure_level = "Needs safeguards"
+else:
+    community_pressure_level = "Lower concern"
 
 evidence_gaps = []
 if headroom_status == "Unknown":
@@ -292,6 +340,10 @@ if cooling_system == "Unknown":
     evidence_gaps.append("cooling approach")
 if water_stress_label == "NoData":
     evidence_gaps.append("Aqueduct 4.0 baseline water-stress coverage")
+if water_dependence == "Unknown":
+    evidence_gaps.append("community dependence on the shared potable-water system")
+if consultation_status != "Completed and documented":
+    evidence_gaps.append("documented community engagement")
 
 if safeguard_status == "Triggered" or headroom_status == "Not adequate":
     decision = "Exclude or redesign"
@@ -376,8 +428,8 @@ if evidence_gaps:
     for item in evidence_gaps:
         st.write(f"- Confirm {item} with the appropriate authority or project evidence.")
 
-result_tab, map_tab, method_tab = st.tabs(
-    ["📄 Plain-language result", "🗺️ Water-stress map", "🧪 Method and sources"]
+result_tab, community_tab, map_tab, method_tab = st.tabs(
+    ["📄 Plain-language result", "👥 Community impact", "🗺️ Water-stress map", "🧪 Method and sources"]
 )
 
 with result_tab:
@@ -392,6 +444,62 @@ with result_tab:
     st.caption(
         f"Comparison reference: {country_data['benchmark_name']} at "
         f"{country_data['benchmark']:.1f} m³/MWh."
+    )
+
+with community_tab:
+    st.subheader("Community Water Impact Screen")
+    st.write(
+        "This screen asks whether the proposed facility could intensify competition for water "
+        "shared with residents and essential services. It does not claim that the facility will "
+        "remove this amount from household supply."
+    )
+    community_metric1, community_metric2, community_metric3 = st.columns(3)
+    community_metric1.metric("Community pressure score", f"{community_pressure_score}/100")
+    community_metric2.metric("Screening level", community_pressure_level)
+    community_metric3.metric(
+        "Peak demand ÷ shared population",
+        f"{community_litres_per_person:,.1f} L/person/day",
+        help="A scale comparison using your population input—not predicted household water loss.",
+    )
+    st.progress(community_pressure_score / 100)
+    if community_pressure_score >= 70:
+        st.error("🚨 High-priority community review: pause siting until shared-system capacity, vulnerable users and drought protections are verified.")
+    elif community_pressure_score >= 40:
+        st.warning("⚠️ Safeguards required: resolve the highlighted evidence and engagement gaps before approval.")
+    else:
+        st.success("✅ Lower screening concern, subject to verification and continuing community safeguards.")
+
+    impact_col1, impact_col2 = st.columns(2)
+    with impact_col1:
+        st.write("**Who may be affected**")
+        if sensitive_receptors:
+            for receptor in sensitive_receptors:
+                st.write(f"- {receptor}")
+        else:
+            st.write("- No sensitive users entered yet—confirm this through local mapping and engagement.")
+        st.write(f"- Shared-system population used: **{shared_population:,} people**")
+        st.write(f"- Potable-water dependence: **{water_dependence}**")
+    with impact_col2:
+        st.write("**Community safeguards to unlock**")
+        safeguard_actions = []
+        if water_source in ["Potable water", "Mixed supply"]:
+            safeguard_actions.append("Demonstrate how potable-water use will be reduced or substituted.")
+        if headroom_status != "Confirmed":
+            safeguard_actions.append("Obtain written utility confirmation of normal and drought-period headroom.")
+        if cumulative_status != "Assessed":
+            safeguard_actions.append("Assess combined demand from existing and approved developments.")
+        if consultation_status != "Completed and documented":
+            safeguard_actions.append("Document engagement, concerns raised and how the design changed in response.")
+        if not sensitive_receptors:
+            safeguard_actions.append("Map hospitals, schools, housing and water-dependent livelihoods in the service area.")
+        for action in safeguard_actions or ["Maintain disclosure and a drought-response operating plan."]:
+            st.write(f"- {action}")
+
+    st.info(
+        f"**Community narrative:** At peak operation, the proposed facility's modelled demand is "
+        f"**{peak_m3_day:,.0f} m³/day**. Dividing that by the entered shared-system population gives "
+        f"**{community_litres_per_person:,.1f} litres per person per day** as a scale comparison. "
+        f"The current community screen is **{community_pressure_level.lower()}** and requires local validation."
     )
 
 with map_tab:
@@ -430,70 +538,100 @@ with map_tab:
     if len(nearby_centres) >= 2:
         st.info(f"🏙️ CLUSTER WATCH — {len(nearby_centres)} documented facilities are within 35 km. Ask the utility to assess their combined demand.")
 
-    map_rows = []
-    for map_country, details in COUNTRIES.items():
-        for map_location, coordinates in details["locations"].items():
-            is_selected = map_country == country and map_location == location
-            stress_label = coordinates[2]
-            stress_category = coordinates[3]
-            if stress_category == -1:
-                stress_color = [124, 58, 237, overlay_strength]
-                layer_meaning = "NoData — local evidence required"
-            elif stress_category == 0:
-                stress_color = [34, 197, 94, overlay_strength]
-                layer_meaning = "Low baseline water stress"
-            elif stress_category == 1:
-                stress_color = [163, 230, 53, overlay_strength]
-                layer_meaning = "Low-medium baseline water stress"
-            elif stress_category == 2:
-                stress_color = [250, 204, 21, overlay_strength]
-                layer_meaning = "Medium-high baseline water stress"
-            elif stress_category == 3:
-                stress_color = [249, 115, 22, overlay_strength]
-                layer_meaning = "High baseline water stress"
-            else:
-                stress_color = [220, 38, 38, overlay_strength]
-                layer_meaning = "Extremely high baseline water stress"
-            map_rows.append(
-                {
-                    "lat": coordinates[0],
-                    "lon": coordinates[1],
-                    "Location": map_location,
-                    "Name": map_location,
-                    "Type": "Water-stress screening zone",
-                    "Country": map_country,
-                    "Water stress": stress_label,
-                    "Layer meaning": layer_meaning,
-                    "Selected": "Selected site" if is_selected else "Other zone",
-                    "overlay_radius": 47000 if map_country == "Malaysia" else 22000,
-                    "stress_color": stress_color,
-                    "site_radius": 9500 if is_selected else 3800,
-                    "site_color": [6, 182, 212, 255] if is_selected else [30, 41, 59, 230],
-                }
-            )
-    map_data = pd.DataFrame(map_rows)
-    overlay_layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=map_data,
-        get_position="[lon, lat]",
-        get_radius="overlay_radius",
-        get_fill_color="stress_color",
-        stroked=True,
-        get_line_color=[255, 255, 255, 220],
-        line_width_min_pixels=2,
-        pickable=True,
+    st.caption("The map now zooms to your selected site. Scroll to zoom, drag to pan and hover for details.")
+
+    selected_site_data = pd.DataFrame(
+        [{
+            "lat": selected_lat,
+            "lon": selected_lon,
+            "Name": "Proposed site",
+            "Type": location,
+            "Layer meaning": f"Water-stress signal: {water_stress_label}",
+            "Country": country,
+        }]
     )
     site_layer = pdk.Layer(
         "ScatterplotLayer",
-        data=map_data,
+        data=selected_site_data,
         get_position="[lon, lat]",
-        get_radius="site_radius",
-        get_fill_color="site_color",
+        get_radius=2200 if country == "Singapore" else 6500,
+        radius_min_pixels=10,
+        radius_max_pixels=18,
+        get_fill_color=[14, 165, 233, 255],
         stroked=True,
         get_line_color=[255, 255, 255, 255],
         line_width_min_pixels=3,
         pickable=True,
     )
+
+    malaysia_boundary_url = (
+        "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/"
+        "releaseData/gbOpen/MYS/ADM1/geoBoundaries-MYS-ADM1_simplified.geojson"
+    )
+    singapore_boundary_url = (
+        "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/"
+        "releaseData/gbOpen/SGP/ADM0/geoBoundaries-SGP-ADM0_simplified.geojson"
+    )
+    if country == "Malaysia":
+        stress_polygon_layer = pdk.Layer(
+            "GeoJsonLayer",
+            data=malaysia_boundary_url,
+            opacity=overlay_strength / 255,
+            stroked=True,
+            filled=True,
+            get_fill_color=(
+                "properties.shapeName === 'Kedah' ? [249,115,22,190] : "
+                "properties.shapeName === 'Perlis' ? [250,204,21,190] : "
+                "properties.shapeName === 'Johor' ? [34,197,94,160] : "
+                "properties.shapeName === 'Selangor' ? [34,197,94,160] : "
+                "properties.shapeName === 'Kuala Lumpur' ? [34,197,94,160] : [34,197,94,115]"
+            ),
+            get_line_color=[186, 230, 253, 210],
+            line_width_min_pixels=1,
+            pickable=True,
+        )
+        risk_label_data = pd.DataFrame(
+            [
+                {"lat": 6.10, "lon": 100.52, "label": "KEDAH · HIGH"},
+                {"lat": 6.46, "lon": 100.20, "label": "PERLIS · MEDIUM-HIGH"},
+            ]
+        )
+        risk_label_layer = pdk.Layer(
+            "TextLayer",
+            data=risk_label_data,
+            get_position="[lon, lat]",
+            get_text="label",
+            get_size=16,
+            get_color=[255, 255, 255, 255],
+            get_angle=0,
+            get_text_anchor="'middle'",
+            get_alignment_baseline="'center'",
+            billboard=True,
+            pickable=False,
+        )
+    else:
+        stress_polygon_layer = pdk.Layer(
+            "GeoJsonLayer",
+            data=singapore_boundary_url,
+            opacity=overlay_strength / 255,
+            stroked=True,
+            filled=True,
+            get_fill_color=[147, 51, 234, 150],
+            get_line_color=[216, 180, 254, 235],
+            line_width_min_pixels=2,
+            pickable=True,
+        )
+
+    scope = st.radio(
+        "Data-centre view",
+        ["Selected country", "Singapore + Malaysia"],
+        horizontal=True,
+        help="Use the regional view to explore cross-border clustering.",
+    )
+    visible_centres = [
+        centre for centre in DATA_CENTRES
+        if scope == "Singapore + Malaysia" or centre["country"] == country
+    ]
     centre_data = pd.DataFrame(
         [
             {
@@ -503,14 +641,14 @@ with map_tab:
                 "Country": centre["country"],
                 "Layer meaning": f"{centre['place']} · {centre['precision']}",
             }
-            for centre in DATA_CENTRES
+            for centre in visible_centres
         ]
     )
     centre_layer = pdk.Layer(
         "ScatterplotLayer",
         data=centre_data,
         get_position="[lon, lat]",
-        get_radius=3600,
+        get_radius=1600 if country == "Singapore" else 3800,
         radius_min_pixels=6,
         radius_max_pixels=13,
         get_fill_color=[250, 204, 21, 245],
@@ -521,30 +659,55 @@ with map_tab:
     )
     active_layers = []
     if show_stress:
-        active_layers.append(overlay_layer)
+        active_layers.append(stress_polygon_layer)
+        if country == "Malaysia":
+            active_layers.append(risk_label_layer)
     active_layers.append(site_layer)
     if show_centres:
         active_layers.append(centre_layer)
 
-    view_state = pdk.ViewState(latitude=3.35, longitude=102.2, zoom=5.45, pitch=28)
+    if country == "Malaysia":
+        map_focus = st.radio(
+            "Map focus",
+            ["Malaysia stress overview", "Selected site"],
+            horizontal=True,
+            help="Overview reveals the stressed northern states; Selected site zooms into your proposal.",
+        )
+    else:
+        map_focus = "Selected site"
+    if map_focus == "Malaysia stress overview":
+        map_latitude, map_longitude, map_zoom = 4.45, 101.55, 5.25
+    else:
+        map_latitude, map_longitude = selected_lat, selected_lon
+        map_zoom = 9.4 if country == "Singapore" else 7.0
+    view_state = pdk.ViewState(
+        latitude=map_latitude,
+        longitude=map_longitude,
+        zoom=map_zoom,
+        pitch=12,
+    )
     deck = pdk.Deck(
         layers=active_layers,
         initial_view_state=view_state,
         tooltip={
-            "html": "<b>{Name}</b><br/>{Type}<br/>{Layer meaning}<br/>{Country}",
+            "html": "<b>{Name}{properties.shapeName}</b><br/>{Type}<br/>{Layer meaning}<br/>{Country}",
             "style": {"backgroundColor": "#102A43", "color": "white"},
         },
         map_style="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
     )
     st.pydeck_chart(deck, width="stretch", height=540)
 
-    legend1, legend2, legend3, legend4, legend5, legend6 = st.columns(6)
+    legend1, legend2, legend3, legend4, legend5 = st.columns(5)
     legend1.markdown("🟢 **Low**")
     legend2.markdown("🟡 **Medium-high**")
     legend3.markdown("🟠 **High**")
-    legend4.markdown("🔴 **Extremely high**")
-    legend5.markdown("🟣 **NoData**")
-    legend6.markdown("🟡 **Data centre**")
+    legend4.markdown("🟣 **NoData**")
+    legend5.markdown("🟡 **Existing centre** · 🔵 **Proposed site**")
+
+    if country == "Malaysia":
+        stress_card1, stress_card2 = st.columns(2)
+        stress_card1.warning("🟠 **Kedah — High (40–80%)**\n\nPriority area for deeper seasonal and basin-level review.")
+        stress_card2.warning("🟡 **Perlis — Medium-high (20–40%)**\n\nRequire local supply and cumulative-demand verification.")
 
     st.write("**Nearest documented facilities**")
     if nearby_centres:
@@ -563,9 +726,9 @@ with map_tab:
 
     st.markdown(
         """
-        <div class="map-key"><b>How to play</b> — change the country and location above, then
-        return to this map. Cyan is your proposed site; gold beacons are operating facilities.
-        Try Kedah or Perlis to activate a stress warning.</div>
+        <div class="map-key"><b>Map guide</b> — coloured state polygons show the available
+        province-level WRI screening result. Select Kedah or Perlis above to jump directly to
+        a stressed area. A green regional result still requires a local utility check.</div>
         """,
         unsafe_allow_html=True,
     )
@@ -573,7 +736,8 @@ with map_tab:
     st.caption(
         "Source: WRI Aqueduct 4.0 country and province rankings, total-use weighting. "
         "Singapore is shown as NoData because the 2023 rankings file does not return a baseline "
-        "water-stress category for it. The circles visualise screening areas, not basin boundaries."
+        "water-stress category for it. Malaysian colours follow administrative boundaries and "
+        "represent province-level aggregates, not sub-basin or utility-service boundaries."
     )
     st.caption(
         "Facility markers are a curated, non-exhaustive set of operator-reported operating sites. "
@@ -588,6 +752,17 @@ with method_tab:
     st.subheader("How demand is calculated")
     st.latex(r"\text{Normal daily demand} = \text{IT capacity} \times 24 \times \text{WUE}")
     st.latex(r"\text{Peak demand} = \text{Normal daily demand} \times \text{peak factor}")
+    st.write("**How the community screen works**")
+    st.write(
+        "The 0–100 screening score adds disclosed points for potable-water reliance, uncertain or "
+        "inadequate utility headroom, water stress or missing stress data, unassessed cumulative "
+        "demand, sensitive users and incomplete engagement. It is a prioritisation index—not a "
+        "measured social impact, approval score or prediction of household water loss."
+    )
+    st.latex(
+        r"\text{Scale comparison} = \frac{\text{facility peak demand}\times 1000}"
+        r"{\text{population sharing the water system}}"
+    )
     st.write(f"**Country context**\n\n{country_data['source_note']}")
     st.write(
         "**Important limitations**\n"
