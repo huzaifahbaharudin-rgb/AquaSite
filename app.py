@@ -942,7 +942,10 @@ def render_three_screen_journey():
             st.subheader("Evidence checklist")
             for item in ["Verified utility headroom","Cumulative-demand assessment","Community/ecological safeguard clearance","Local water-stress evidence","Shared-system community dependence","Documented community engagement"]:
                 st.write(f"{'✅' if item not in gaps else '⬜'} {item}")
-        st.warning("Approval remains blocked or conditional until every critical evidence gap is resolved.") if gaps else st.success("Core screening evidence is complete; formal technical and regulatory review is still required.")
+        if gaps:
+            st.warning("Approval remains blocked or conditional until every critical evidence gap is resolved.")
+        else:
+            st.success("Core screening evidence is complete; formal technical and regulatory review is still required.")
 
     else:
         st.header("Decision Brief")
