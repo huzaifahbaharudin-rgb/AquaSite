@@ -13,6 +13,7 @@ st.markdown(
           radial-gradient(circle at 85% 8%, rgba(14,165,233,.18), transparent 28%),
           linear-gradient(145deg, #031426 0%, #08233d 52%, #0b3152 100%);
         color: #e6f4ff;
+        font-size: 17px;
     }
     [data-testid="stHeader"] { background: rgba(3,20,38,.88); }
     [data-testid="stToolbar"] { color: #dbeafe !important; }
@@ -20,20 +21,36 @@ st.markdown(
     h2, h3 { color: #bae6fd !important; }
     p, label, li, .stMarkdown, [data-testid="stCaptionContainer"] {
         color: #dbeafe !important;
+        line-height: 1.55;
     }
     a { color: #38bdf8 !important; }
     [data-baseweb="tab"] { color: #bfdbfe !important; }
     [aria-selected="true"][data-baseweb="tab"] {
         color: #38bdf8 !important; border-bottom-color: #38bdf8 !important;
     }
-    [data-testid="stWidgetLabel"] p { color: #e0f2fe !important; font-weight: 650; }
-    [data-testid="stRadio"] label p { color: #e0f2fe !important; }
+    [data-testid="stWidgetLabel"] p {
+        color: #e0f2fe !important; font-weight: 700; font-size: 1.05rem !important;
+    }
+    [data-testid="stRadio"] label {
+        background: rgba(11,41,69,.72); border: 1px solid #1d4f73;
+        border-radius: 12px; padding: 11px 15px; margin-right: 8px;
+    }
+    [data-testid="stRadio"] label p { color: #e0f2fe !important; font-size: 1rem !important; }
     [data-baseweb="select"] > div,
     [data-testid="stNumberInput"] input,
     [data-testid="stExpander"] details {
         background: #0b2945 !important; color: #f0f9ff !important;
         border-color: #1d4f73 !important;
+        min-height: 54px;
     }
+    [data-testid="stNumberInput"] button { min-width: 46px; min-height: 46px; }
+    [data-testid="stSlider"] { padding-top: 8px; padding-bottom: 12px; }
+    [data-testid="stSlider"] [role="slider"] {
+        width: 26px !important; height: 26px !important;
+        background: #38bdf8 !important; border: 3px solid #e0f2fe !important;
+        box-shadow: 0 0 0 6px rgba(56,189,248,.16);
+    }
+    [data-testid="stMultiSelect"] > div { min-height: 54px; background: #0b2945; }
     [data-testid="stExpander"] summary { color: #e0f2fe !important; }
     div[data-testid="stMetric"] {
         background: linear-gradient(145deg, rgba(12,49,82,.98), rgba(8,35,61,.98));
@@ -191,6 +208,10 @@ country_data = COUNTRIES[country]
 selected_location_data = country_data["locations"][location]
 water_stress_label = selected_location_data[2]
 water_stress_category = selected_location_data[3]
+
+# Filled after the design and community levers are evaluated. Keeping the
+# placeholder here makes the live map appear near the top of the experience.
+live_map_placeholder = st.empty()
 
 st.header("2  Choose a starting scenario")
 scenario_name = st.radio(
@@ -397,6 +418,117 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+signal_rgb = {
+    "RED": [239, 68, 68, 245],
+    "AMBER": [245, 158, 11, 245],
+    "GREEN": [34, 197, 94, 245],
+}[page_signal]
+live_lat, live_lon = selected_location_data[0], selected_location_data[1]
+live_site_data = pd.DataFrame(
+    [{
+        "lat": live_lat,
+        "lon": live_lon,
+        "Name": f"Proposed {capacity_mw:.0f} MW site",
+        "Type": f"{page_signal}: {signal_title}",
+        "Layer meaning": f"Peak demand {peak_m3_day:,.0f} m³/day · Community score {community_pressure_score}/100",
+        "Country": location,
+    }]
+)
+live_boundary_url = (
+    "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/"
+    "releaseData/gbOpen/MYS/ADM1/geoBoundaries-MYS-ADM1_simplified.geojson"
+    if country == "Malaysia"
+    else "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/"
+    "releaseData/gbOpen/SGP/ADM0/geoBoundaries-SGP-ADM0_simplified.geojson"
+)
+live_boundary_colour = (
+    "properties.shapeName === 'Kedah' ? [249,115,22,175] : "
+    "properties.shapeName === 'Perlis' ? [250,204,21,175] : [34,197,94,95]"
+    if country == "Malaysia"
+    else [147, 51, 234, 115]
+)
+live_boundary_layer = pdk.Layer(
+    "GeoJsonLayer",
+    data=live_boundary_url,
+    stroked=True,
+    filled=True,
+    get_fill_color=live_boundary_colour,
+    get_line_color=[186, 230, 253, 180],
+    line_width_min_pixels=1,
+    pickable=False,
+)
+live_ring_layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=live_site_data,
+    get_position="[lon, lat]",
+    get_radius=max(5000, min(28000, peak_m3_day * 3.2)),
+    get_fill_color=[signal_rgb[0], signal_rgb[1], signal_rgb[2], 55],
+    get_line_color=signal_rgb,
+    stroked=True,
+    line_width_min_pixels=3,
+    pickable=False,
+)
+live_site_layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=live_site_data,
+    get_position="[lon, lat]",
+    get_radius=2200,
+    radius_min_pixels=10,
+    radius_max_pixels=18,
+    get_fill_color=signal_rgb,
+    get_line_color=[255, 255, 255, 255],
+    stroked=True,
+    line_width_min_pixels=3,
+    pickable=True,
+)
+live_centre_data = pd.DataFrame(
+    [{
+        **centre,
+        "Name": f"{centre['operator']} {centre['name']}",
+        "Type": "Existing data centre",
+        "Layer meaning": centre["place"],
+        "Country": centre["country"],
+    } for centre in DATA_CENTRES if centre["country"] == country]
+)
+live_centre_layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=live_centre_data,
+    get_position="[lon, lat]",
+    get_radius=1600 if country == "Singapore" else 3800,
+    radius_min_pixels=5,
+    radius_max_pixels=10,
+    get_fill_color=[250, 204, 21, 235],
+    get_line_color=[120, 53, 15, 255],
+    stroked=True,
+    line_width_min_pixels=2,
+    pickable=True,
+)
+live_view = pdk.ViewState(
+    latitude=1.36 if country == "Singapore" else 4.15,
+    longitude=103.82 if country == "Singapore" else 101.75,
+    zoom=9.0 if country == "Singapore" else 5.45,
+    pitch=12,
+)
+live_deck = pdk.Deck(
+    layers=[live_boundary_layer, live_ring_layer, live_centre_layer, live_site_layer],
+    initial_view_state=live_view,
+    tooltip={
+        "html": "<b>{Name}</b><br/>{Type}<br/>{Layer meaning}<br/>{Country}",
+        "style": {"backgroundColor": "#07182b", "color": "white"},
+    },
+    map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+)
+
+with live_map_placeholder.container():
+    st.subheader("Live site response")
+    st.caption("Move any design or community lever below—the map and decision signal update instantly.")
+    live_metric1, live_metric2, live_metric3 = st.columns(3)
+    live_metric1.metric("Live signal", page_signal)
+    live_metric2.metric("Peak water demand", f"{peak_m3_day:,.0f} m³/day")
+    live_metric3.metric("Community pressure", f"{community_pressure_score}/100")
+    st.pydeck_chart(live_deck, width="stretch", height=460)
+    st.caption("🔴 stop/redesign · 🟠 resolve safeguards · 🟢 proceed conditionally · 🟡 existing data centre")
 
 st.divider()
 st.header("Screening result")
