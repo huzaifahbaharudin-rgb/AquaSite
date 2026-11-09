@@ -2081,3 +2081,70 @@ with method_tab:
     )
 
 st.caption("AquaSite prototype — demonstration purposes only.")
+""", unsafe_allow_html=True)
+with m_col2:
+loss_color = "#EF4444" if projected_delay_loss > 0 else "#10B981"
+st.markdown(f"""
+
+📉 Unmitigated Capital Exposure Risk
+S$ {projected_delay_loss:,} /Day
+Projected capital burn from construction gridlock delays.
+
+""", unsafe_allow_html=True)
+with m_col3:
+st.markdown(f"""
+
+👥 Grassroots Social Resource Draw
+~{civilian_equivalency:,} Households
+Civilian population volume drawing identical resource metrics.
+
+""", unsafe_allow_html=True)
+# 🗺️ Macro vs Micro Parcel Discrepancy Matrix
+st.markdown("### 📍 Hyper-Local Resolution Discrepancy Index")
+st.caption("Why generic solutions fail: AquaSite parcel telemetry vs Global Macro Maps (WRI Aqueduct 10km Scale Grid Deficit)")
+grid_data = pd.DataFrame({
+'Environmental Control Vector': ['Municipal Water Main Pipe Baseline Capacity', 'Seasonal Hydrological Water Drawdown Max', 'Local Treatment Plant Utility Strain Limit', 'Community Drinking Water Safety Margin'],
+'Macro-Satellite Baseline Rating (10km Pixel Grid)': ['Unmonitored Regional Target Area', 'Annualized Linear Average Calculation', 'Province-wide Aggregate Metric', 'General Country Metrics Only'],
+'AquaSite Hyper-Local Telemetry (<1km Real-world Scale)': ['⛔ CRITICAL BOTTLENECK - 250mm Limitation Found', '🚨 High Vulnerability - Peak July Drawdown Drop -42%', '⚠️ Saturation Threshold Hit - 91% Node Load', '🔥 Severe Local Flashpoint Exposure Risk Identified']
+})
+st.table(grid_data)
+with tab2:
+st.markdown("### 👥 Community Transparency Registry")
+st.caption("Active decentralized tracking ensuring complete data visibility for local town councils and regional populations.")
+st.divider()
+st.markdown("""
+
+📢 OPEN FRAMEWORK DISCLOSURE CLAUSE (TIER 1)
+This log records verified plain-language translations and binding public answer records. It cannot be bought or edited by project developers.
+
+""", unsafe_allow_html=True)
+# Interactive Community Sim Input
+comm_q = st.text_input("💬 Submit Local Public Inquiry Entry", placeholder="Enter questions regarding seasonal water table impacts...")
+if comm_q:
+st.success("🔒 Request Logged. Forwarded to designated engineering review group for published, binding response within 48 hours.")
+st.markdown("#### 📜 Current Community Audit History")
+st.markdown("""
+*   Notification Node Status: 📡 Pre-Application Early Notice Broadcast Complete (English / Malay / Indonesian Documentation Uploaded)
+*   Public Q&A Registry Logs:
+*   Inquiry (Resident Action Group): "Will the peak evaporative cooling capacity lower municipal pressure for local agricultural zones?"
+*   Audit Determination: YES. Evaporative specifications will trigger network drops. Developer issued conditional update to transition to closed-loop chillers to retain social license profile.
+""")
+with tab3:
+st.markdown("### 🛡️ Green Bond Project Finance Pre-Clearance Matrix")
+st.caption("Due diligence criteria built to satisfy the June 2026 Equator Principles and GRESB Data Center Assessment metrics.")
+st.divider()
+st.markdown(f"""
+
+🔒 INDEPENDENT VERIFIED IMPACT RATING
+This asset evaluation was generated via firewall public utility and research grants. Financial independence from commercial project developers is certified.
+
+""", unsafe_allow_html=True)
+# Audit checklist visualization
+c1, c2, c3 = st.columns(3)
+c1.checkbox("Hydrological Network Clearance Passed", value=("GREEN" in status_label))
+c2.checkbox("Social License Plan Validated", value=("RED" not in status_label))
+c3.checkbox("Portfolio Stranded Asset Immunity Confirmed", value=("GREEN" in status_label))
+st.divider()
+if st.button("📥 GENERATE OFFICIAL AUDIT PDF REPORT FOR SUSTAINABLE LENDERS"):
+st.balloons()
+st.success("Report Generated. Document compiled with encrypted cryptographic signature for institutional investor submission.")
