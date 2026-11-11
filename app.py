@@ -26,4 +26,4 @@ st.markdown(
 html = (Path(__file__).parent / "index.html").read_text(encoding="utf-8")
 
 # Increase height if the bottom of the page is cut off.
-components.html(html, height=2800, scrolling=True)
+components.html(html, height=3200, scrolling=True)
