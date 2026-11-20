@@ -1,0 +1,65 @@
+[
+ {
+  "type": "Feature",
+  "properties": {
+   "id": "ramsar/1288",
+   "name": "Sungai Pulai",
+   "nameEn": null,
+   "kind": "Ramsar Wetland of International Importance \u00b7 Forest Reserve (mangrove)",
+   "layer": "protected",
+   "operator": null,
+   "source": "Ramsar Sites Information Service (rsis.ramsar.org) \u00b7 site 1288, 9,126 ha, designated 31 Jan 2003",
+   "precision": "RSIS centre coordinate, nearest arc-minute (\u00b12 km). Boundary not bundled; dashed circle is an equal-area indicative extent only",
+   "areaHa": 9126
+  },
+  "geometry": {
+   "type": "Point",
+   "coordinates": [
+    103.51666666666667,
+    1.3666666666666667
+   ]
+  }
+ },
+ {
+  "type": "Feature",
+  "properties": {
+   "id": "ramsar/1289",
+   "name": "Tanjung Piai",
+   "nameEn": null,
+   "kind": "Ramsar Wetland of International Importance \u00b7 State Park",
+   "layer": "protected",
+   "operator": null,
+   "source": "Ramsar Sites Information Service (rsis.ramsar.org) \u00b7 site 1289, 526 ha, designated 31 Jan 2003",
+   "precision": "RSIS centre coordinate, nearest arc-minute (\u00b12 km)",
+   "areaHa": 526
+  },
+  "geometry": {
+   "type": "Point",
+   "coordinates": [
+    103.51666666666667,
+    1.2666666666666666
+   ]
+  }
+ },
+ {
+  "type": "Feature",
+  "properties": {
+   "id": "ramsar/1287",
+   "name": "Pulau Kukup",
+   "nameEn": null,
+   "kind": "Ramsar Wetland of International Importance \u00b7 State Park",
+   "layer": "protected",
+   "operator": null,
+   "source": "Ramsar Sites Information Service (rsis.ramsar.org) \u00b7 site 1287, 647 ha, designated 31 Jan 2003",
+   "precision": "RSIS centre coordinate, nearest arc-minute (\u00b12 km)",
+   "areaHa": 647
+  },
+  "geometry": {
+   "type": "Point",
+   "coordinates": [
+    103.41666666666667,
+    1.3166666666666667
+   ]
+  }
+ }
+]
